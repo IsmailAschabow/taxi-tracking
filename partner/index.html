@@ -92,6 +92,7 @@
     .infobox { border-radius:10px; padding:12px; }
     .infobox .k { font-size:13px; font-weight:600; margin-bottom:3px; }
     .infobox .v { font-size:15px; font-weight:700; }
+    .pterm { width:100%; border-radius:10px; margin-top:14px; display:block; }
     .call { display:block; text-decoration:none; text-align:center; background:var(--green); color:#fff;
       border-radius:12px; padding:14px; font-size:16px; font-weight:700; }
     .hidden { display:none; }
@@ -146,6 +147,7 @@
             <div><div class="k" id="pDestK">Zielort</div><div class="v" id="pDest"></div></div>
           </div>
         </div>
+        <img id="pTermImg" class="pterm hidden" alt="Terminal" />
       </div>
       <div class="pcard hidden" id="pContact">
         <div class="lbl">Kontakt zum Fahrer</div>
@@ -291,6 +293,8 @@
         $('pDestK').textContent='Zielort'
         $('pDest').textContent = o.destination || '—'
       }
+      const ti=$('pTermImg')
+      if (o.terminal){ ti.src='../terminal'+o.terminal+'.jpg'; ti.classList.remove('hidden') } else ti.classList.add('hidden')
     }
 
     function openPopup(id){ openId=id; const o=orders.find(x=>x.order_id===id); if(!o) return; fillPopup(o); $('overlay').classList.add('show') }

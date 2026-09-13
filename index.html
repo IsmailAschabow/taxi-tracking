@@ -67,6 +67,7 @@
     .wait { background: var(--greenbg); border-radius: 10px; padding: 14px; }
     .wait .k { font-size: 13px; color: var(--green); font-weight: 600; margin-bottom: 3px; }
     .wait .v { font-size: 16px; font-weight: 700; }
+    .wait-img { width: 100%; border-radius: 10px; margin-top: 12px; display: block; }
 
     .call {
       display: block; text-decoration: none; text-align: center;
@@ -140,6 +141,7 @@
           <div class="k">Ich warte an folgendem Ort auf Sie</div>
           <div class="v" id="waitLoc"></div>
         </div>
+        <img id="waitImg" class="wait-img hidden" alt="Terminal" />
       </div>
 
       <!-- Kontakt -->
@@ -216,6 +218,11 @@
       if (hasDriver) {
         $('hello').textContent = 'Hallo, ich bin ' + info.driver_first_name + '.'
         $('waitLoc').textContent = info.pickup_location || '—'
+
+        // Terminal-Bild (ZRH) im Warteort-Bereich anzeigen.
+        const termImg = info.terminal === '1' ? 'terminal1.jpg' : info.terminal === '2' ? 'terminal2.jpg' : null
+        const wi = $('waitImg')
+        if (termImg) { wi.src = termImg; wi.classList.remove('hidden') } else { wi.classList.add('hidden') }
 
         const slot = $('photoSlot')
         if (info.driver_photo_url) {
