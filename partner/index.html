@@ -19,7 +19,7 @@
       color:var(--muted); margin-bottom:24px; }
     .topbar { display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:28px; flex-wrap:wrap; }
     .logo { height:120px; width:auto; }
-    .topbar-sub { font-size:13px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+    .topbar-sub { font-size:28px; font-weight:700; color:var(--text); }
     .layout { display:flex; gap:36px; align-items:flex-start; flex-wrap:wrap; }
     .cal { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px;
       width:400px; flex:0 0 auto; }
@@ -104,6 +104,8 @@
       <img class="logo" src="logo.webp" alt="Trip Companion" />
     </div>
     <div id="invalid" class="empty hidden">Dieser Link ist ungültig. Bitte wenden Sie sich an Ihren Fahrdienst.</div>
+    <div class="day-title" id="dayTitle"></div>
+    <div class="day-sub" id="daySub"></div>
     <div class="layout" id="layout">
       <div class="cal">
         <div class="cal-head">
@@ -114,8 +116,6 @@
         <div class="cal-grid" id="calGrid"></div>
       </div>
       <div class="main">
-        <div class="day-title" id="dayTitle"></div>
-        <div class="day-sub" id="daySub"></div>
         <div id="listArea"><div class="loading">Fahrten werden geladen…</div></div>
       </div>
     </div>
