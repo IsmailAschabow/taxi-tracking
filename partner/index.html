@@ -17,8 +17,8 @@
     .wrap { width:100%; }
     .brand { font-size:13px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
       color:var(--muted); margin-bottom:24px; }
-    .topbar { display:flex; align-items:center; gap:18px; margin-bottom:28px; flex-wrap:wrap; }
-    .logo { height:64px; width:auto; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:28px; flex-wrap:wrap; }
+    .logo { height:120px; width:auto; }
     .topbar-sub { font-size:13px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
     .layout { display:flex; gap:36px; align-items:flex-start; flex-wrap:wrap; }
     .cal { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px;
@@ -100,8 +100,8 @@
 <body>
   <div class="wrap">
     <div class="topbar">
-      <img class="logo" src="logo.webp" alt="Trip Companion" />
       <div class="topbar-sub">Fahrten-Übersicht</div>
+      <img class="logo" src="logo.webp" alt="Trip Companion" />
     </div>
     <div id="invalid" class="empty hidden">Dieser Link ist ungültig. Bitte wenden Sie sich an Ihren Fahrdienst.</div>
     <div class="layout" id="layout">
