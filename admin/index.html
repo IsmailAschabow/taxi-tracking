@@ -33,6 +33,10 @@
     .login-btn:disabled { opacity:.6; }
     .login-err { color:var(--red); font-size:14px; margin-top:14px; text-align:center; }
     .login-hint { font-size:12px; color:var(--muted); margin-top:16px; line-height:1.5; }
+    .login-info { font-size:14px; color:var(--sub); line-height:1.5; }
+    .login-links { margin-top:14px; font-size:13px; text-align:center; color:var(--muted); }
+    .login-links a { color:var(--sub); }
+    #liCode { font-size:22px; letter-spacing:6px; text-align:center; }
 
     /* ---- Kopf ---- */
     .topbar { display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:22px; flex-wrap:wrap; }
@@ -188,6 +192,16 @@
       <button class="login-btn" id="liBtn" type="submit">Anmelden</button>
       <div id="liErr" class="login-err hidden"></div>
       <div class="login-hint">Nur für die Disposition (Admin-Konto aus der App). Hotels nutzen weiterhin ihren eigenen Übersichts-Link und sehen nur ihre eigenen Fahrten.</div>
+    </form>
+    <!-- 2. Schritt: Clerk verlangt auf neuen Geräten/Browsern einen Code (Device Trust) bzw. 2FA -->
+    <form class="login-card hidden" id="codeForm">
+      <div class="login-title">Bestätigungscode</div>
+      <p class="login-info" id="codeInfo"></p>
+      <label for="liCode">Code</label>
+      <input id="liCode" inputmode="numeric" autocomplete="one-time-code" maxlength="12" required />
+      <button class="login-btn" id="codeBtn" type="submit">Bestätigen</button>
+      <div id="codeErr" class="login-err hidden"></div>
+      <div class="login-links"><a href="#" id="codeResend">Code erneut senden</a> · <a href="#" id="codeBack">Zurück</a></div>
     </form>
   </div>
 
@@ -752,13 +766,94 @@
         case 'too_many_requests':
         case 'rate_limit_exceeded': return 'Zu viele Versuche. Bitte kurz warten.'
         case 'session_exists': return 'Bereits angemeldet – bitte Seite neu laden.'
+        case 'form_code_incorrect': return 'Code falsch. Bitte nochmal prüfen.'
+        case 'verification_expired': return 'Code abgelaufen – bitte „Code erneut senden".'
+        case 'verification_failed': return 'Zu viele falsche Codes – bitte neu anmelden.'
       }
       return (first && (first.longMessage || first.message)) || (err && err.message) || 'Anmeldung fehlgeschlagen.'
     }
 
+    // ---- Zweiter Schritt: Code (Clerk "Device Trust" auf neuen Geräten bzw. 2FA) ----
+    let pendingSignIn = null, pendingFactor = null
+
+    function showCredentials(){
+      pendingSignIn = null; pendingFactor = null
+      $('codeForm').classList.add('hidden')
+      $('loginForm').classList.remove('hidden')
+      show('loginView')
+    }
+
+    function pickSecondFactor(si){
+      const factors = si.supportedSecondFactors || []
+      return factors.find(f => f.strategy === 'email_code')
+        || factors.find(f => f.strategy === 'phone_code')
+        || factors.find(f => f.strategy === 'totp')
+        || null
+    }
+
+    async function sendCode(){
+      const f = pendingFactor
+      if (f.strategy === 'email_code') pendingSignIn = await pendingSignIn.prepareSecondFactor({ strategy: 'email_code', emailAddressId: f.emailAddressId })
+      if (f.strategy === 'phone_code') pendingSignIn = await pendingSignIn.prepareSecondFactor({ strategy: 'phone_code', phoneNumberId: f.phoneNumberId })
+    }
+
+    async function startSecondFactor(si){
+      const f = pickSecondFactor(si)
+      if (!f) {
+        const offered = (si.supportedSecondFactors || []).map(x => x.strategy).join(', ') || 'keine'
+        $('liErr').textContent = 'Clerk verlangt eine Bestätigung, die das Portal nicht kann (' + offered + '). '
+          + 'Bitte im Clerk-Dashboard unter Protect → Protections „Device Trust" ausschalten.'
+        $('liErr').classList.remove('hidden')
+        return
+      }
+      pendingSignIn = si
+      pendingFactor = f
+      await sendCode()
+      $('codeInfo').textContent = f.strategy === 'totp'
+        ? 'Bitte den Code aus deiner Authenticator-App eingeben.'
+        : 'Neues Gerät oder neuer Browser: Clerk hat einen Bestätigungscode an '
+          + (f.safeIdentifier || (f.strategy === 'email_code' ? 'deine E-Mail-Adresse' : 'deine Telefonnummer'))
+          + ' geschickt. Bitte hier eingeben.'
+      $('codeResend').classList.toggle('hidden', f.strategy === 'totp')
+      $('codeErr').classList.add('hidden')
+      $('liCode').value = ''
+      $('loginForm').classList.add('hidden')
+      $('codeForm').classList.remove('hidden')
+      $('liCode').focus()
+    }
+
+    $('codeForm').onsubmit = async (e) => {
+      e.preventDefault()
+      if (!pendingSignIn || !pendingFactor) { showCredentials(); return }
+      $('codeErr').classList.add('hidden')
+      $('codeBtn').disabled = true
+      try {
+        const res = await pendingSignIn.attemptSecondFactor({ strategy: pendingFactor.strategy, code: $('liCode').value.trim() })
+        if (res.status === 'complete') {
+          await window.Clerk.setActive({ session: res.createdSessionId })
+          $('liPass').value = ''
+          showCredentials()
+          route()
+        } else {
+          $('codeErr').textContent = 'Bestätigung nicht abgeschlossen (Status: ' + res.status + ').'
+          $('codeErr').classList.remove('hidden')
+        }
+      } catch (err) {
+        $('codeErr').textContent = clerkMsg(err)
+        $('codeErr').classList.remove('hidden')
+      }
+      $('codeBtn').disabled = false
+    }
+    $('codeResend').onclick = async (e) => {
+      e.preventDefault()
+      try { await sendCode(); toast('Neuer Code wurde gesendet.') }
+      catch (err) { $('codeErr').textContent = clerkMsg(err); $('codeErr').classList.remove('hidden') }
+    }
+    $('codeBack').onclick = (e) => { e.preventDefault(); showCredentials() }
+
     function route(){
       const user = window.Clerk.user
-      if (!user) { show('loginView'); return }
+      if (!user) { showCredentials(); return }
       if ((user.publicMetadata || {}).role !== 'admin') { show('denyView'); return }
       $('userEmail').textContent = user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : ''
       show('appView')
@@ -788,7 +883,7 @@
       if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
       try { await window.Clerk.signOut() } catch (e) {}
       orders = []; sessions = []; dayOrders = []
-      show('loginView')
+      showCredentials()
     }
 
     $('loginForm').onsubmit = async (e) => {
@@ -803,6 +898,8 @@
           await window.Clerk.setActive({ session: si.createdSessionId })
           $('liPass').value = ''
           route()
+        } else if (si.status === 'needs_second_factor' || si.status === 'needs_client_trust') {
+          await startSecondFactor(si)
         } else {
           $('liErr').textContent = 'Anmeldung nicht abgeschlossen (Status: ' + si.status + ').'
           $('liErr').classList.remove('hidden')
