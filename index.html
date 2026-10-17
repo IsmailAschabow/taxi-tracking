@@ -1,15 +1,17 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Ihre Fahrt – Live-Status</title>
+  <title>Your ride – live status</title>
   <style>
     :root {
       --bg: #f7f8fa; --card: #ffffff; --border: #e5e7eb;
       --text: #0f172a; --muted: #94a3b8; --sub: #475569; --accent: #0f172a;
       --green: #059669; --greenbg: rgba(5,150,105,0.10);
+      --blue: #2563eb; --bluebg: rgba(37,99,235,0.10);
+      --wa: #25d366;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -26,8 +28,11 @@
     }
     .brand { font-size: 12px; font-weight: 700; letter-spacing: 1px;
       text-transform: uppercase; color: var(--muted); text-align: center; margin-bottom: 20px; }
+    .brand.second { margin: 22px 0 14px; }
+    .pickup-date { text-align: center; font-size: 14px; color: var(--sub); margin: -8px 0 18px; }
+    .pickup-date b { color: var(--text); }
 
-    /* --- Fortschrittslinie (3 Stufen) --- */
+    /* --- Statuslinien (Fahrer: 3 Stufen, Gast: 2 Stufen) --- */
     .steps { display: flex; align-items: flex-start; margin: 4px 0 6px; }
     .step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
     .step .dot {
@@ -55,9 +60,10 @@
     .hello-sub { font-size: 15px; color: var(--sub); margin-top: 4px; }
 
     .label { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+    .summary { font-size: 15px; line-height: 1.6; }
     .route { display: flex; gap: 12px; }
     .route-line { display: flex; flex-direction: column; align-items: center; padding-top: 4px; }
-    .route-line .d1 { width: 10px; height: 10px; border-radius: 50%; background: #2563eb; }
+    .route-line .d1 { width: 10px; height: 10px; border-radius: 50%; background: var(--blue); }
     .route-line .d2 { width: 10px; height: 10px; border-radius: 50%; background: var(--green); }
     .route-line .ln { width: 2px; flex: 1; min-height: 22px; background: var(--border); }
     .route-texts { flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; }
@@ -68,17 +74,36 @@
     .wait .k { font-size: 13px; color: var(--green); font-weight: 600; margin-bottom: 3px; }
     .wait .v { font-size: 16px; font-weight: 700; }
     .wait-img { width: 100%; border-radius: 10px; margin-top: 12px; display: block; }
+    .hint-right {
+      display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px;
+      background: var(--accent); color: #fff; border-radius: 10px; padding: 12px 14px;
+      font-size: 15px; font-weight: 800; letter-spacing: 1px;
+    }
+    .hint-right .arr { font-size: 22px; line-height: 1; }
 
     .call {
-      display: block; text-decoration: none; text-align: center;
+      display: block; width: 100%; border: none; cursor: pointer; font-family: inherit;
+      text-decoration: none; text-align: center;
       background: var(--green); color: #fff; border-radius: 12px; padding: 15px;
       font-size: 17px; font-weight: 700; margin-top: 6px;
     }
     .call small { display: block; font-weight: 500; font-size: 13px; opacity: 0.85; margin-top: 2px; }
 
+    /* --- Anruf-Auswahl (WhatsApp / Telefon) --- */
+    .ask-ov { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: flex-end; justify-content: center; z-index: 40; }
+    .ask-ov.show { display: flex; }
+    .ask-box { background: var(--card); width: 100%; max-width: 440px; border-radius: 18px 18px 0 0; padding: 22px 18px 26px; }
+    .ask-title { font-size: 19px; font-weight: 700; text-align: center; }
+    .ask-sub { font-size: 13px; color: var(--sub); text-align: center; margin: 6px 0 14px; line-height: 1.45; }
+    .ask-btn { display: block; width: 100%; text-align: center; text-decoration: none; border: none; font-family: inherit;
+      border-radius: 12px; padding: 15px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+    .btn-wa { background: var(--wa); color: #fff; }
+    .btn-tel { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+    .btn-cancel { background: transparent; color: var(--sub); font-weight: 600; }
+
     .foot { text-align: center; font-size: 12px; color: var(--muted); margin-top: 4px; }
     .foot .live { color: var(--green); font-weight: 600; }
-    .hidden { display: none; }
+    .hidden { display: none !important; }
     .msg { text-align: center; color: var(--sub); font-size: 15px; line-height: 1.5; }
     .spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--accent);
       border-radius: 50%; margin: 8px auto; animation: spin 0.8s linear infinite; }
@@ -120,24 +145,36 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="brand">Ihr Fahrdienst</div>
+    <div class="brand">Your driver</div>
+    <div id="pickupDate" class="pickup-date hidden"></div>
 
     <div id="loading" class="card">
       <div class="spinner"></div>
-      <p class="msg">Status wird geladen…</p>
+      <p class="msg">Loading status…</p>
     </div>
 
     <div id="notfound" class="card hidden">
-      <p class="msg">Dieser Link ist ungültig oder abgelaufen.<br>Bitte wenden Sie sich an Ihr Hotel.</p>
+      <p class="msg">This link is invalid or has expired.<br>Please contact your hotel.</p>
     </div>
 
     <div id="content" class="hidden">
-      <!-- Statuslinie -->
+      <!-- Status Fahrer -->
       <div class="card">
         <div class="steps">
-          <div class="step" id="step1"><div class="bar"></div><div class="dot">✓</div><div class="lbl">Informiert</div></div>
-          <div class="step" id="step2"><div class="bar"></div><div class="dot">✓</div><div class="lbl">Unterwegs</div></div>
-          <div class="step" id="step3"><div class="bar"></div><div class="dot">✓</div><div class="lbl">Angekommen</div></div>
+          <div class="step" id="step1"><div class="bar"></div><div class="dot">✓</div><div class="lbl">Is informed</div></div>
+          <div class="step" id="step2"><div class="bar"></div><div class="dot">✓</div><div class="lbl">Is on his way</div></div>
+          <div class="step" id="step3"><div class="bar"></div><div class="dot">✓</div><div class="lbl">Arrived</div></div>
+        </div>
+      </div>
+
+      <!-- Status Gast: erst sichtbar, sobald der Fahrer angekommen ist -->
+      <div id="guestBlock" class="hidden">
+        <div class="brand second">The guest</div>
+        <div class="card">
+          <div class="steps">
+            <div class="step" id="gstep1"><div class="bar"></div><div class="dot">✓</div><div class="lbl">Is on board</div></div>
+            <div class="step" id="gstep2"><div class="bar"></div><div class="dot">✓</div><div class="lbl">Has arrived</div></div>
+          </div>
         </div>
       </div>
 
@@ -145,49 +182,59 @@
       <div class="card driver" id="driverCard">
         <div id="photoSlot"></div>
         <div class="hello" id="hello"></div>
-        <div class="hello-sub">Ich bin heute Ihr Fahrer.</div>
+        <div class="hello-sub">I'll be your driver today.</div>
       </div>
 
-      <!-- Hinweis: weitere Fahrzeuge (Gepäck) -->
-      <div class="card hidden" id="extraCarsCard">
-        <div class="wait" style="background:rgba(37,99,235,0.10)">
-          <div class="k" style="color:#2563eb">Weitere Fahrzeuge</div>
-          <div class="v" id="extraCarsText"></div>
-        </div>
+      <!-- Fahrt im Überblick: Autos, Personen, Kindersitze -->
+      <div class="card hidden" id="detailsCard">
+        <div class="label">Your ride at a glance</div>
+        <div class="summary" id="summaryText"></div>
       </div>
 
       <!-- Route -->
       <div class="card">
-        <div class="label">Ihre Fahrt</div>
+        <div class="label">Your trip</div>
         <div class="route">
           <div class="route-line"><div class="d1"></div><div class="ln"></div><div class="d2"></div></div>
           <div class="route-texts">
-            <div><div class="k">Abholort</div><div class="v" id="pickup"></div></div>
-            <div><div class="k">Zielort</div><div class="v" id="dest"></div></div>
+            <div><div class="k">Pickup</div><div class="v" id="pickup"></div></div>
+            <div><div class="k" id="destK">Destination</div><div class="v" id="dest"></div></div>
           </div>
         </div>
       </div>
 
-      <!-- Warteort -->
+      <!-- Warteort (inkl. Terminal) -->
       <div class="card" id="waitCard">
         <div class="wait">
-          <div class="k">Ich warte an folgendem Ort auf Sie</div>
+          <div class="k">I'm waiting for you at</div>
           <div class="v" id="waitLoc"></div>
         </div>
-        <img id="waitImg" class="wait-img hidden" alt="Terminal" />
+        <img id="waitImg" class="wait-img hidden" alt="Meeting point" />
+        <div id="waitHint" class="hint-right hidden"><span class="arr">➜</span><span id="waitHintText"></span></div>
       </div>
 
       <!-- Kontakt -->
       <div class="card" id="contactCard">
-        <div class="label">Falls Sie mich erreichen möchten</div>
-        <a class="call" id="callBtn" href="#">Fahrer anrufen<small id="callNum"></small></a>
+        <div class="label">Need to reach me?</div>
+        <button class="call" id="callBtn" type="button">Call driver<small id="callNum"></small></button>
       </div>
 
-      <div class="foot"><span class="live">● Live</span> · Aktualisierung alle 20 Sekunden</div>
+      <div class="foot"><span class="live">● Live</span> · updates every 20 seconds</div>
     </div>
   </div>
 
-  <button id="cartBtn" class="cart-btn hidden" aria-label="Warenkorb">
+  <!-- Anruf: WhatsApp vorschlagen -->
+  <div class="ask-ov" id="callAsk">
+    <div class="ask-box">
+      <div class="ask-title">Call via WhatsApp?</div>
+      <div class="ask-sub">WhatsApp opens the chat with your driver – tap the 📞 icon there to start the call.</div>
+      <a class="ask-btn btn-wa" id="waBtn" href="#" target="_blank" rel="noopener">Yes, call via WhatsApp</a>
+      <a class="ask-btn btn-tel" id="telBtn" href="#">No, normal phone call</a>
+      <button class="ask-btn btn-cancel" id="askCancel" type="button">Cancel</button>
+    </div>
+  </div>
+
+  <button id="cartBtn" class="cart-btn hidden" aria-label="Snacks & drinks">
     🛒<span id="cartCount" class="cart-count hidden">0</span>
   </button>
 
@@ -195,10 +242,10 @@
     <div class="shop-box">
       <div class="shop-head">
         <div>
-          <div class="shop-title">Snacks & Getränke</div>
-          <div class="shop-sub">Kleine Auswahl für unterwegs — unverbindlich, wird nur an Ihren Fahrdienst weitergeleitet.</div>
+          <div class="shop-title">Snacks & drinks</div>
+          <div class="shop-sub">A small selection for the road — non-binding, only forwarded to your driver service.</div>
         </div>
-        <button class="shop-x" id="shopClose">×</button>
+        <button class="shop-x" id="shopClose" aria-label="Close">×</button>
       </div>
       <div id="catalog" class="catalog"></div>
       <div class="shop-foot">
@@ -213,6 +260,19 @@
     const SUPABASE_URL = 'https://apmaqbctnpxzkinmaiap.supabase.co'
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwbWFxYmN0bnB4emtpbm1haWFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NjIxMzUsImV4cCI6MjA5MDQzODEzNX0.kpmLP9h-MCYJi954p1-s7dWvgFrAGGOy6V1KhlZZbTQ'
     const POLL_MS = 20000
+    // Zeiten immer in Ortszeit Zürich/Vorarlberg anzeigen, egal wo das Handy des Gastes eingestellt ist.
+    const TZ = 'Europe/Zurich'
+    // Terminal-Fotos (ZRH) + Hinweis für den Gast.
+    const TERMINALS = {
+      '1': { img: 'terminal1.jpg', hint: 'TO YOUR RIGHT' },
+      '2': { img: 'terminal2.jpg', hint: 'TO YOUR RIGHT' },
+    }
+    const SEATS = {
+      babyschale: ['baby seat', 'baby seats'],
+      kindersitz: ['child seat', 'child seats'],
+      sitzerhoehung: ['booster seat', 'booster seats'],
+    }
+    const API_HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }
 
     function getToken() {
       const q = new URLSearchParams(location.search).get('token')
@@ -228,80 +288,165 @@
     function showNotFound() {
       $('loading').classList.add('hidden')
       $('content').classList.add('hidden')
+      $('pickupDate').classList.add('hidden')
       $('notfound').classList.remove('hidden')
       if (timer) clearInterval(timer)
     }
 
-    function setSteps(stage) {
-      for (let i = 1; i <= 3; i++) {
-        const el = $('step' + i)
+    // Schritte bis "reached" sind erledigt; der letzte erledigte pulsiert (falls pulse).
+    function setSteps(prefix, count, reached, pulse) {
+      for (let i = 1; i <= count; i++) {
+        const el = $(prefix + i)
         el.classList.remove('done', 'current')
-        if (i < stage) el.classList.add('done')
-        else if (i === stage) el.classList.add('done', 'current')
+        if (i <= reached) el.classList.add('done')
+        if (i === reached && pulse) el.classList.add('current')
       }
     }
 
+    // Nummer immer mit Ländervorwahl (Standard +43), damit der Gast auch mit ausländischem Handy anrufen kann.
+    function intlPhone(raw) {
+      const s = String(raw || '').trim().replace(/\(0\)/g, '')
+      const digits = s.replace(/\D/g, '')
+      if (!digits) return ''
+      if (s.startsWith('+')) return '+' + digits
+      if (digits.startsWith('00')) return '+' + digits.slice(2)
+      if (digits.startsWith('0')) return '+43' + digits.slice(1)
+      if (/^(43|41|49|423)\d{8,}$/.test(digits)) return '+' + digits
+      return '+43' + digits
+    }
+    function prettyPhone(p) {
+      const m = p.match(/^\+(43|41|49|423)(\d+)$/)
+      return m ? '+' + m[1] + ' ' + m[2] : p
+    }
+
+    function withTerminal(loc, terminal) { return (loc || '—') + (terminal ? ' · Terminal ' + terminal : '') }
+    function fmtDay(iso) { return new Date(iso).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ }) }
+    function fmtTime(iso) { return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: TZ }) }
+    function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many) }
+
     function initials(name) {
       return name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '·'
+    }
+
+    // Längerer Fließtext: Anzahl Autos, Personen, Kinderausstattung (falls vorhanden).
+    function rideSummary(info) {
+      const cars = Math.max(info.car_count || 1, 1)
+      const pax = info.passenger_count || 0
+      const luggage = info.luggage_cars || 0
+      let text = 'We are picking you up with ' + plural(cars, 'vehicle', 'vehicles')
+      if (pax) text += ' for ' + plural(pax, 'passenger', 'passengers')
+      text += '.'
+      if (cars > 1 && luggage > 0) {
+        text += luggage === 1
+          ? ' One vehicle is reserved just for your luggage.'
+          : ' ' + luggage + ' vehicles are reserved just for your luggage.'
+      }
+      const counts = {}
+      ;(info.child_seats || []).forEach(s => { if (SEATS[s]) counts[s] = (counts[s] || 0) + 1 })
+      const seats = Object.keys(counts).map(k => counts[k] + ' × ' + SEATS[k][counts[k] === 1 ? 0 : 1])
+      if (seats.length) text += ' Child equipment on board: ' + seats.join(', ') + '.'
+      return text
+    }
+
+    function renderPhoto(info) {
+      const slot = $('photoSlot')
+      const key = (info.driver_photo_url || '') + '|' + info.driver_first_name
+      if (slot.dataset.key === key) return
+      slot.dataset.key = key
+      slot.textContent = ''
+      const fallback = () => {
+        const fb = document.createElement('div')
+        fb.className = 'photo-fb'
+        fb.textContent = initials(info.driver_first_name)
+        slot.textContent = ''
+        slot.appendChild(fb)
+      }
+      if (!info.driver_photo_url) { fallback(); return }
+      const img = document.createElement('img')
+      img.className = 'photo'; img.src = info.driver_photo_url; img.alt = info.driver_first_name
+      img.onerror = fallback
+      slot.appendChild(img)
     }
 
     function render(info) {
       $('loading').classList.add('hidden')
       $('notfound').classList.add('hidden')
       $('content').classList.remove('hidden')
-      $('cartBtn').classList.remove('hidden')
 
-      setSteps(info.stage || 1)
-      $('pickup').textContent = info.pickup_location || '—'
-      $('dest').textContent = info.destination || '—'
+      // Fahrer: informed → on his way → arrived; danach Gast: on board → has arrived.
+      const stage = info.stage || 1
+      setSteps('step', 3, Math.min(stage, 3), stage <= 3)
+      $('guestBlock').classList.toggle('hidden', stage < 3)
+      setSteps('gstep', 2, Math.max(stage - 3, 0), true)
+
+      // Abholdatum
+      const pd = $('pickupDate')
+      pd.textContent = ''
+      if (info.scheduled_at) {
+        let when = fmtDay(info.scheduled_at) + ' · ' + fmtTime(info.scheduled_at)
+        if (info.booking_type === 'stunden' && info.scheduled_until) when += ' – ' + fmtTime(info.scheduled_until)
+        const b = document.createElement('b')
+        b.textContent = when
+        pd.append('Pickup: ', b)
+        pd.classList.remove('hidden')
+      } else {
+        pd.classList.add('hidden')
+      }
+
+      // Route – Terminal immer mit angeben.
+      $('pickup').textContent = withTerminal(info.pickup_location, info.terminal)
+      if (info.booking_type === 'stunden') {
+        $('destK').textContent = 'Booking'
+        $('dest').textContent = 'Hourly booking' + (info.scheduled_until ? ' (until ' + fmtTime(info.scheduled_until) + ')' : '')
+      } else {
+        $('destK').textContent = 'Destination'
+        $('dest').textContent = info.destination || '—'
+      }
 
       const hasDriver = !!info.driver_first_name
-      // Fahrerkarte / Warteort / Kontakt nur zeigen, wenn Fahrerdaten vorhanden.
+      // Fahrerkarte / Überblick / Warteort nur zeigen, wenn Fahrerdaten vorhanden.
       $('driverCard').classList.toggle('hidden', !hasDriver)
+      $('detailsCard').classList.toggle('hidden', !hasDriver)
       $('waitCard').classList.toggle('hidden', !hasDriver)
-      $('contactCard').classList.toggle('hidden', !(hasDriver && info.driver_phone))
-
-      // Hinweis auf weitere Fahrzeuge (Gepäckwagen).
-      const extra = info.extra_cars || 0
-      $('extraCarsCard').classList.toggle('hidden', !(hasDriver && extra > 0))
-      if (hasDriver && extra > 0) {
-        $('extraCarsText').textContent = extra === 1
-          ? 'Für Ihr Gepäck ist ein weiteres Fahrzeug dabei.'
-          : 'Für Ihr Gepäck sind ' + extra + ' weitere Fahrzeuge dabei.'
-      }
 
       if (hasDriver) {
-        $('hello').textContent = 'Hallo, ich bin ' + info.driver_first_name + '.'
-        $('waitLoc').textContent = info.pickup_location || '—'
+        $('hello').textContent = 'Hello, I\'m ' + info.driver_first_name + '.'
+        $('summaryText').textContent = rideSummary(info)
+        $('waitLoc').textContent = withTerminal(info.pickup_location, info.terminal)
 
-        // Terminal-Bild (ZRH) im Warteort-Bereich anzeigen.
-        const termImg = info.terminal === '1' ? 'terminal1.jpg' : info.terminal === '2' ? 'terminal2.jpg' : null
+        // Terminal-Foto (ZRH) + Richtungshinweis.
+        const term = TERMINALS[info.terminal]
         const wi = $('waitImg')
-        if (termImg) { wi.src = termImg; wi.classList.remove('hidden') } else { wi.classList.add('hidden') }
-
-        const slot = $('photoSlot')
-        if (info.driver_photo_url) {
-          slot.innerHTML = ''
-          const img = document.createElement('img')
-          img.className = 'photo'; img.src = info.driver_photo_url; img.alt = info.driver_first_name
-          img.onerror = () => { slot.innerHTML = '<div class="photo-fb">' + initials(info.driver_first_name) + '</div>' }
-          slot.appendChild(img)
+        if (term) {
+          if (wi.getAttribute('src') !== term.img) wi.src = term.img
+          wi.classList.remove('hidden')
+          $('waitHintText').textContent = term.hint
+          $('waitHint').classList.remove('hidden')
         } else {
-          slot.innerHTML = '<div class="photo-fb">' + initials(info.driver_first_name) + '</div>'
+          wi.classList.add('hidden')
+          $('waitHint').classList.add('hidden')
         }
-
-        if (info.driver_phone) {
-          $('callBtn').href = 'tel:' + info.driver_phone.replace(/\s+/g, '')
-          $('callNum').textContent = info.driver_phone
-        }
+        renderPhoto(info)
       }
+
+      // Kontakt: Anruf mit Ländervorwahl, WhatsApp wird vorgeschlagen.
+      const phone = hasDriver ? intlPhone(info.driver_phone) : ''
+      $('contactCard').classList.toggle('hidden', !phone)
+      if (phone) {
+        $('callNum').textContent = prettyPhone(phone)
+        $('waBtn').href = 'https://wa.me/' + phone.replace(/\D/g, '')
+        $('telBtn').href = 'tel:' + phone
+      }
+
+      // Warenkorb nur bei Abholung vom Flughafen (zum Hotel), nicht umgekehrt.
+      $('cartBtn').classList.toggle('hidden', !info.is_airport_pickup || stage >= 5)
     }
 
     async function poll() {
       try {
         const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_tracking_info', {
           method: 'POST',
-          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+          headers: API_HEADERS,
           body: JSON.stringify({ p_token: token }),
         })
         if (!res.ok) return
@@ -311,96 +456,107 @@
       } catch (e) { /* nächster Poll versucht es erneut */ }
     }
 
+    // ---------------------- Anruf ----------------------
+    const closeAsk = () => $('callAsk').classList.remove('show')
+    $('callBtn').onclick = () => $('callAsk').classList.add('show')
+    $('askCancel').onclick = closeAsk
+    $('waBtn').addEventListener('click', closeAsk)
+    $('telBtn').addEventListener('click', closeAsk)
+    $('callAsk').onclick = (e) => { if (e.target === $('callAsk')) closeAsk() }
+
     // ---------------------- Warenkorb ----------------------
+    // name = deutscher Name für die Mail an den Fahrdienst, en = Anzeige für den Gast.
     const CATALOG = [
       { cat: 'Sandwiches', items: [
-        { name: 'Hühnchen-Sandwich', price: 6.50 },
-        { name: 'Schinken-Käse-Sandwich', price: 5.90 },
-        { name: 'Thunfisch-Sandwich', price: 6.20 },
+        { name: 'Hühnchen-Sandwich', en: 'Chicken sandwich', price: 6.50 },
+        { name: 'Schinken-Käse-Sandwich', en: 'Ham & cheese sandwich', price: 5.90 },
+        { name: 'Thunfisch-Sandwich', en: 'Tuna sandwich', price: 6.20 },
       ]},
-      { cat: 'Vegetarisch', items: [
-        { name: 'Caprese-Sandwich (Mozzarella & Tomate)', price: 6.00 },
-        { name: 'Falafel-Wrap', price: 6.50 },
-        { name: 'Hummus-Gemüse-Wrap', price: 5.90 },
+      { cat: 'Vegetarian', items: [
+        { name: 'Caprese-Sandwich (Mozzarella & Tomate)', en: 'Caprese sandwich (mozzarella & tomato)', price: 6.00 },
+        { name: 'Falafel-Wrap', en: 'Falafel wrap', price: 6.50 },
+        { name: 'Hummus-Gemüse-Wrap', en: 'Hummus & veggie wrap', price: 5.90 },
       ]},
-      { cat: 'Snacks & Süßes', items: [
-        { name: 'Frischer Obstbecher', price: 3.90 },
-        { name: 'Nuss-Mix', price: 3.20 },
-        { name: 'Schokoriegel', price: 2.50 },
+      { cat: 'Snacks & sweets', items: [
+        { name: 'Frischer Obstbecher', en: 'Fresh fruit cup', price: 3.90 },
+        { name: 'Nuss-Mix', en: 'Mixed nuts', price: 3.20 },
+        { name: 'Schokoriegel', en: 'Chocolate bar', price: 2.50 },
       ]},
-      { cat: 'Getränke', items: [
-        { name: 'Wasser still (0,5 l)', price: 2.50 },
-        { name: 'Wasser prickelnd (0,5 l)', price: 2.50 },
-        { name: 'Cola (0,33 l)', price: 3.00 },
-        { name: 'Orangensaft (0,25 l)', price: 3.20 },
-        { name: 'Kaffee', price: 3.00 },
-        { name: 'Espresso', price: 2.50 },
+      { cat: 'Drinks', items: [
+        { name: 'Wasser still (0,5 l)', en: 'Still water (0.5 l)', price: 2.50 },
+        { name: 'Wasser prickelnd (0,5 l)', en: 'Sparkling water (0.5 l)', price: 2.50 },
+        { name: 'Cola (0,33 l)', en: 'Cola (0.33 l)', price: 3.00 },
+        { name: 'Orangensaft (0,25 l)', en: 'Orange juice (0.25 l)', price: 3.20 },
+        { name: 'Kaffee', en: 'Coffee', price: 3.00 },
+        { name: 'Espresso', en: 'Espresso', price: 2.50 },
       ]},
     ]
     const cart = {}
     let confirming = false
-    function euro(n) { return (Math.round(n*100)/100).toFixed(2).replace('.', ',') + ' €' }
-    function cartCount() { return Object.values(cart).reduce((a,i)=>a+i.qty,0) }
-    function cartTotal() { return Object.values(cart).reduce((a,i)=>a+i.price*i.qty,0) }
-    function findItem(name) { for (const s of CATALOG){ const f=s.items.find(i=>i.name===name); if(f) return f } return null }
-    function changeQty(name, price, d) {
-      const cur = cart[name] ? cart[name].qty : 0
+    function euro(n) { return '€ ' + (Math.round(n * 100) / 100).toFixed(2) }
+    function cartCount() { return Object.values(cart).reduce((a, i) => a + i.qty, 0) }
+    function cartTotal() { return Object.values(cart).reduce((a, i) => a + i.price * i.qty, 0) }
+    function itemAt(ref) { const [s, i] = ref.split(':').map(Number); return CATALOG[s].items[i] }
+    function changeQty(it, d) {
+      const cur = cart[it.name] ? cart[it.name].qty : 0
       const next = Math.max(0, cur + d)
-      if (next === 0) delete cart[name]; else cart[name] = { name, price, qty: next }
-      renderCatalog(); updateCount(); if (confirming) { confirming = false } renderActions()
+      if (next === 0) delete cart[it.name]; else cart[it.name] = { name: it.name, price: it.price, qty: next }
+      confirming = false
+      renderCatalog(); updateCount(); renderActions()
     }
     function renderCatalog() {
       const c = $('catalog'); c.innerHTML = ''
-      CATALOG.forEach(sec => {
+      CATALOG.forEach((sec, si) => {
         const t = document.createElement('div'); t.className = 'cat-title'; t.textContent = sec.cat; c.appendChild(t)
-        sec.items.forEach(it => {
+        sec.items.forEach((it, ii) => {
           const q = cart[it.name] ? cart[it.name].qty : 0
+          const ref = si + ':' + ii
           const row = document.createElement('div'); row.className = 'item'
-          row.innerHTML = '<div class="in"><div class="iname">'+it.name+'</div><div class="iprice">'+euro(it.price)+'</div></div>'
+          row.innerHTML = '<div class="in"><div class="iname">' + it.en + '</div><div class="iprice">' + euro(it.price) + '</div></div>'
             + '<div class="qty">'
-            + (q>0 ? '<button class="qbtn" data-m="'+it.name+'">−</button><span class="qn">'+q+'</span>' : '')
-            + '<button class="qbtn" data-p="'+it.name+'">+</button></div>'
+            + (q > 0 ? '<button class="qbtn" data-m="' + ref + '">−</button><span class="qn">' + q + '</span>' : '')
+            + '<button class="qbtn" data-p="' + ref + '">+</button></div>'
           c.appendChild(row)
         })
       })
-      c.querySelectorAll('[data-p]').forEach(b => { const it=findItem(b.dataset.p); b.onclick=()=>changeQty(b.dataset.p, it?it.price:0, 1) })
-      c.querySelectorAll('[data-m]').forEach(b => { const it=findItem(b.dataset.m); b.onclick=()=>changeQty(b.dataset.m, it?it.price:0, -1) })
+      c.querySelectorAll('[data-p]').forEach(b => { b.onclick = () => changeQty(itemAt(b.dataset.p), 1) })
+      c.querySelectorAll('[data-m]').forEach(b => { b.onclick = () => changeQty(itemAt(b.dataset.m), -1) })
     }
-    function updateCount() { const n=cartCount(); $('cartCount').textContent=n; $('cartCount').classList.toggle('hidden', n===0) }
+    function updateCount() { const n = cartCount(); $('cartCount').textContent = n; $('cartCount').classList.toggle('hidden', n === 0) }
     function renderActions() {
       const a = $('shopActions'); const n = cartCount()
-      if (n === 0) { a.innerHTML = '<button class="order-btn" disabled>Warenkorb ist leer</button>'; return }
+      if (n === 0) { a.innerHTML = '<button class="order-btn" disabled>Your cart is empty</button>'; return }
       if (!confirming) {
-        a.innerHTML = '<button class="order-btn" id="orderBtn">Bestellen · '+euro(cartTotal())+'</button>'
+        a.innerHTML = '<button class="order-btn" id="orderBtn">Order · ' + euro(cartTotal()) + '</button>'
         $('orderBtn').onclick = () => { confirming = true; renderActions() }
       } else {
-        a.innerHTML = '<div class="confirm-q">Auswahl verbindlich an Ihren Fahrdienst senden?</div>'
-          + '<div class="confirm-row"><button class="btn2 btn-no" id="cNo">Zurück</button><button class="btn2 btn-yes" id="cYes">Ja, senden</button></div>'
+        a.innerHTML = '<div class="confirm-q">Send your selection to your driver service?</div>'
+          + '<div class="confirm-row"><button class="btn2 btn-no" id="cNo">Back</button><button class="btn2 btn-yes" id="cYes">Yes, send</button></div>'
         $('cNo').onclick = () => { confirming = false; renderActions() }
         $('cYes').onclick = submitOrder
       }
     }
-    function showShopMsg(msg, ok) { const m=$('shopMsg'); m.textContent=msg; m.className='shop-msg '+(ok?'ok':'err'); m.classList.remove('hidden') }
+    function showShopMsg(msg, ok) { const m = $('shopMsg'); m.textContent = msg; m.className = 'shop-msg ' + (ok ? 'ok' : 'err'); m.classList.remove('hidden') }
     async function submitOrder() {
       const items = Object.values(cart)
       if (items.length === 0) return
-      $('shopActions').innerHTML = '<button class="order-btn" disabled>Wird gesendet…</button>'
+      $('shopActions').innerHTML = '<button class="order-btn" disabled>Sending…</button>'
       try {
         const res = await fetch(SUPABASE_URL + '/functions/v1/send-order-request', {
           method: 'POST',
-          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+          headers: API_HEADERS,
           body: JSON.stringify({ token, items })
         })
-        const data = await res.json().catch(()=>({}))
-        if (!res.ok || data.error) { showShopMsg(data.error || 'Senden fehlgeschlagen.', false); confirming=false; renderActions(); return }
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok || data.error) { showShopMsg('Sending failed. Please try again.', false); confirming = false; renderActions(); return }
         for (const k in cart) delete cart[k]
         confirming = false
         renderCatalog(); updateCount()
-        showShopMsg('Danke! Ihre Auswahl wurde an den Fahrdienst übermittelt.', true)
+        showShopMsg('Thank you! Your selection has been sent to your driver service.', true)
         $('shopActions').innerHTML = ''
-      } catch (e) { showShopMsg('Keine Verbindung. Bitte erneut versuchen.', false); confirming=false; renderActions() }
+      } catch (e) { showShopMsg('No connection. Please try again.', false); confirming = false; renderActions() }
     }
-    $('cartBtn').onclick = () => { $('shopMsg').classList.add('hidden'); confirming=false; renderCatalog(); updateCount(); renderActions(); $('shop').classList.add('show') }
+    $('cartBtn').onclick = () => { $('shopMsg').classList.add('hidden'); confirming = false; renderCatalog(); updateCount(); renderActions(); $('shop').classList.add('show') }
     $('shopClose').onclick = () => $('shop').classList.remove('show')
     $('shop').onclick = (e) => { if (e.target === $('shop')) $('shop').classList.remove('show') }
 

@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Disposition – Übersicht</title>
+  <style>
+    :root {
+      --bg:#f7f8fa; --card:#fff; --border:#e5e7eb; --text:#0f172a; --muted:#94a3b8;
+      --sub:#475569; --accent:#0f172a; --green:#059669; --greenbg:rgba(5,150,105,.10);
+      --blue:#2563eb; --bluebg:rgba(37,99,235,.10); --indigo:#4f46e5; --indigobg:rgba(79,70,229,.10);
+      --orange:#b45309; --orangebg:#fef3c7; --red:#dc2626;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      background:var(--bg); color:var(--text); min-height:100vh; padding:32px 44px; }
+    .hidden { display:none !important; }
+    .wrap { width:100%; }
+    .spinner { width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--accent);
+      border-radius:50%; margin:80px auto; animation:spin .8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ---- Login ---- */
+    .login { max-width:380px; margin:40px auto; }
+    .login-logo { display:block; height:110px; margin:0 auto 24px; }
+    .login-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; }
+    .login-title { font-size:20px; font-weight:700; margin-bottom:18px; }
+    .login label { display:block; font-size:13px; font-weight:600; color:var(--sub); margin:12px 0 6px; }
+    .login input { width:100%; border:1px solid var(--border); border-radius:10px; padding:12px 14px; font-size:16px; font-family:inherit; }
+    .login-btn { width:100%; margin-top:18px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+      padding:14px; font-size:16px; font-weight:700; cursor:pointer; font-family:inherit; }
+    .login-btn:disabled { opacity:.6; }
+    .login-err { color:var(--red); font-size:14px; margin-top:14px; text-align:center; }
+    .login-hint { font-size:12px; color:var(--muted); margin-top:16px; line-height:1.5; }
+
+    /* ---- Kopf ---- */
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:22px; flex-wrap:wrap; }
+    .logo { height:96px; width:auto; }
+    .topbar-sub { font-size:28px; font-weight:700; }
+    .topbar-user { font-size:13px; color:var(--muted); margin-top:4px; }
+    .topbar-user a { color:var(--sub); }
+    .tabs { display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap; }
+    .tab { border:1px solid var(--border); background:var(--card); color:var(--sub); border-radius:20px;
+      padding:9px 18px; font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; }
+    .tab.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+    .layout { display:flex; gap:36px; align-items:flex-start; flex-wrap:wrap; }
+    .cal { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; width:400px; flex:0 0 auto; }
+    .main { flex:1 1 520px; min-width:0; }
+    .cal-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .cal-title { font-size:19px; font-weight:700; }
+    .cal-nav { background:var(--bg); border:1px solid var(--border); border-radius:8px; width:40px; height:40px;
+      font-size:20px; cursor:pointer; color:var(--sub); }
+    .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+    .cal-dow { text-align:center; font-size:13px; font-weight:600; color:var(--muted); padding:6px 0; }
+    .cal-day { position:relative; aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+      font-size:16px; border-radius:10px; cursor:pointer; border:1px solid transparent; }
+    .cal-day.other { color:var(--muted); opacity:.5; }
+    .cal-day.today { border-color:var(--accent); }
+    .cal-day.selected { background:var(--accent); color:#fff; font-weight:700; }
+    .cal-day .dot { position:absolute; bottom:4px; width:5px; height:5px; border-radius:50%; background:var(--green); }
+    .cal-day.selected .dot { background:#fff; }
+
+    .day-title { font-size:24px; font-weight:700; margin-bottom:4px; }
+    .day-sub { font-size:15px; color:var(--muted); margin-bottom:20px; }
+    .filter-row { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+    .filter-row label { font-size:13px; font-weight:600; color:var(--sub); }
+    .filter-row select { border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:14px; background:var(--card); font-family:inherit; }
+    .empty { color:var(--muted); font-size:14px; padding:24px 0; }
+    .err { color:var(--red); font-size:14px; padding:12px 0; }
+
+    /* ---- Fahrten ---- */
+    .cards { display:flex; flex-wrap:wrap; gap:18px; }
+    .ride { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:22px; width:300px; cursor:pointer; transition:box-shadow .15s; }
+    .ride:hover { box-shadow:0 4px 14px rgba(0,0,0,.10); }
+    .ride .time { font-size:14px; color:var(--muted); margin-bottom:8px; }
+    .ride .name { font-size:20px; font-weight:700; margin-bottom:4px; }
+    .ride .hotel { font-size:13px; color:var(--sub); margin-bottom:12px; }
+    .pill { display:inline-flex; align-items:center; gap:6px; font-size:14px; font-weight:600; padding:6px 14px; border-radius:20px; margin-top:6px; }
+    .pill .pdot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+    .st-angenommen { background:var(--bluebg); color:var(--blue); }
+    .st-unterwegs { background:rgba(15,23,42,.07); color:var(--accent); }
+    .st-angekommen { background:var(--greenbg); color:var(--green); }
+    .st-an_bord { background:var(--indigobg); color:var(--indigo); }
+    .st-abgeschlossen { background:var(--greenbg); color:var(--green); }
+    .remind { margin-top:16px; padding-top:14px; border-top:1px solid var(--border); cursor:default; }
+    .remind-q { font-size:13px; font-weight:600; color:var(--sub); margin-bottom:8px; }
+    .yn { display:flex; gap:8px; }
+    .yn-b { flex:1; border:1px solid var(--border); background:var(--card); color:var(--sub); border-radius:8px;
+      padding:8px 0; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
+    .yn-b.on.yes { background:var(--green); border-color:var(--green); color:#fff; }
+    .yn-b.on.no { background:var(--orangebg); border-color:#f59e0b; color:var(--orange); }
+    .remind-info { font-size:12px; color:var(--muted); margin-top:8px; }
+    .remind-info.ok { color:var(--green); }
+
+    /* ---- Dienstzeit ---- */
+    .duty { background:var(--card); border:1px solid var(--border); border-radius:14px; }
+    .duty-row { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:16px 20px; border-top:1px solid var(--border); }
+    .duty-row:first-child { border-top:none; }
+    .duty-name { font-size:16px; font-weight:700; }
+    .duty-lines { font-size:13px; color:var(--sub); margin-top:4px; line-height:1.6; }
+    .duty-warn { font-size:13px; color:var(--orange); font-weight:600; margin-top:4px; }
+    .chip { display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:700; padding:6px 12px; border-radius:16px; white-space:nowrap; }
+    .chip.on { background:var(--greenbg); color:var(--green); }
+    .chip.on::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--green); animation:blink 1.6s ease-in-out infinite; }
+    @keyframes blink { 50% { opacity:.3; } }
+    .chip.done { background:rgba(15,23,42,.07); color:var(--accent); }
+    .chip.none { background:var(--bg); color:var(--muted); border:1px solid var(--border); }
+
+    /* ---- Stunden ---- */
+    .tbl-wrap { overflow-x:auto; background:var(--card); border:1px solid var(--border); border-radius:14px; }
+    table { border-collapse:collapse; width:100%; min-width:560px; }
+    th { font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); font-weight:600; text-align:center; padding:12px 8px; border-bottom:1px solid var(--border); }
+    td { font-size:14px; text-align:center; padding:12px 8px; border-bottom:1px solid var(--border); }
+    th:first-child, td:first-child { text-align:left; padding-left:18px; }
+    td.zero { color:var(--muted); }
+    td.total { font-weight:700; }
+    tr:last-child td { border-bottom:none; }
+    .badge { font-size:10px; font-weight:700; background:var(--orangebg); color:var(--orange); border-radius:4px; padding:1px 5px; margin-left:6px; }
+    .badge.live { background:var(--greenbg); color:var(--green); }
+
+    /* ---- Popup ---- */
+    .overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:flex-start; justify-content:center; padding:24px 16px; overflow-y:auto; z-index:10; }
+    .overlay.show { display:flex; }
+    .modal { background:var(--bg); border-radius:16px; width:100%; max-width:440px; padding:16px; position:relative; }
+    .close { position:absolute; top:10px; right:10px; width:34px; height:34px; border-radius:50%; background:var(--card); border:1px solid var(--border); font-size:18px; cursor:pointer; color:var(--sub); z-index:2; }
+    .pcard { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; margin-bottom:12px; }
+    .steps { display:flex; align-items:flex-start; }
+    .step { flex:1; display:flex; flex-direction:column; align-items:center; position:relative; }
+    .step .sd { width:24px; height:24px; border-radius:50%; background:#e5e7eb; border:3px solid #e5e7eb; z-index:2; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:700; }
+    .step.done .sd { background:var(--green); border-color:var(--green); }
+    .step .sb { position:absolute; top:10px; left:-50%; width:100%; height:4px; background:#e5e7eb; z-index:1; }
+    .step:first-child .sb { display:none; }
+    .step.done .sb { background:var(--green); }
+    .step .sl { margin-top:8px; font-size:12px; font-weight:600; color:var(--muted); text-align:center; }
+    .step.done .sl { color:var(--text); }
+    .steps-title { font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+    .steps-gap { height:18px; }
+    .drv { text-align:center; }
+    .photo,.photo-fb { width:88px; height:88px; border-radius:50%; margin:0 auto 12px; object-fit:cover; border:3px solid var(--greenbg); }
+    .photo-fb { background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:700; }
+    .hello { font-size:20px; font-weight:700; }
+    .hello-sub { font-size:14px; color:var(--sub); margin-top:3px; }
+    .lbl { font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+    .summary { font-size:14px; line-height:1.55; }
+    .route { display:flex; gap:12px; }
+    .rl { display:flex; flex-direction:column; align-items:center; padding-top:4px; }
+    .rl .d1 { width:10px; height:10px; border-radius:50%; background:var(--blue); }
+    .rl .d2 { width:10px; height:10px; border-radius:50%; background:var(--green); }
+    .rl .ln { width:2px; flex:1; min-height:20px; background:var(--border); }
+    .rt { flex:1; display:flex; flex-direction:column; justify-content:space-between; gap:12px; }
+    .rt .k { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+    .rt .v { font-size:15px; font-weight:600; }
+    .pterm { width:100%; border-radius:10px; margin-top:14px; display:block; }
+    .hint-right { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:10px; background:var(--accent); color:#fff; border-radius:10px; padding:11px 14px; font-size:14px; font-weight:800; letter-spacing:1px; }
+    .call { display:block; text-decoration:none; text-align:center; background:var(--green); color:#fff; border-radius:12px; padding:14px; font-size:16px; font-weight:700; }
+    .kv { display:flex; justify-content:space-between; gap:12px; font-size:14px; padding:5px 0; }
+    .kv span { color:var(--muted); }
+    .kv b { text-align:right; }
+    .linkrow { display:flex; gap:8px; margin-top:10px; }
+    .linkrow input { flex:1; min-width:0; border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:12px; color:var(--sub); font-family:inherit; }
+    .linkrow button { border:none; background:var(--accent); color:#fff; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+    .toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--accent); color:#fff; padding:12px 18px; border-radius:10px; font-size:14px; font-weight:600; z-index:20; }
+    .toast.bad { background:var(--red); }
+
+    @media (max-width: 720px) {
+      body { padding:16px; }
+      .logo { height:64px; }
+      .topbar-sub { font-size:22px; }
+      .cal { width:100%; padding:16px; }
+      .ride { width:100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="bootView"><div class="spinner"></div></div>
+
+  <!-- Login: gleiches Konto wie in der App, nur Rolle "admin" -->
+  <div id="loginView" class="login hidden">
+    <img class="login-logo" src="../partner/logo.webp" alt="Trip Companion" />
+    <form class="login-card" id="loginForm">
+      <div class="login-title">Disposition – Anmeldung</div>
+      <label for="liEmail">E-Mail</label>
+      <input id="liEmail" type="email" autocomplete="username" required />
+      <label for="liPass">Passwort</label>
+      <input id="liPass" type="password" autocomplete="current-password" required />
+      <button class="login-btn" id="liBtn" type="submit">Anmelden</button>
+      <div id="liErr" class="login-err hidden"></div>
+      <div class="login-hint">Nur für die Disposition (Admin-Konto aus der App). Hotels nutzen weiterhin ihren eigenen Übersichts-Link und sehen nur ihre eigenen Fahrten.</div>
+    </form>
+  </div>
+
+  <div id="denyView" class="login hidden">
+    <div class="login-card">
+      <div class="login-title">Kein Zugriff</div>
+      <p style="font-size:14px;color:var(--sub);line-height:1.5">Dieser Bereich ist nur für die Disposition (Admin). Bitte mit einem Admin-Konto anmelden.</p>
+      <button class="login-btn" id="denyLogout" type="button">Abmelden</button>
+    </div>
+  </div>
+
+  <div id="appView" class="wrap hidden">
+    <div class="topbar">
+      <div>
+        <div class="topbar-sub">Disposition – Übersicht</div>
+        <div class="topbar-user"><span id="userEmail"></span> · <a href="#" id="logoutBtn">Abmelden</a></div>
+      </div>
+      <img class="logo" src="../partner/logo.webp" alt="Trip Companion" />
+    </div>
+    <div class="tabs">
+      <button class="tab on" data-tab="rides" type="button">Fahrten</button>
+      <button class="tab" data-tab="duty" type="button">Dienstzeit der Fahrer</button>
+      <button class="tab" data-tab="hours" type="button">Stunden (Woche)</button>
+    </div>
+    <div class="day-title" id="dayTitle"></div>
+    <div class="day-sub" id="daySub"></div>
+    <div class="layout">
+      <div class="cal">
+        <div class="cal-head">
+          <button class="cal-nav" id="prevM" type="button">‹</button>
+          <div class="cal-title" id="calTitle"></div>
+          <button class="cal-nav" id="nextM" type="button">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <div class="main">
+        <div id="loadErr" class="err hidden"></div>
+        <div id="ridesPane">
+          <div class="filter-row">
+            <label for="hotelSel">Hotel</label>
+            <select id="hotelSel"><option value="">Alle Hotels</option></select>
+          </div>
+          <div id="ridesList"><div class="empty">Fahrten werden geladen…</div></div>
+        </div>
+        <div id="dutyPane" class="hidden"><div id="dutyList"></div></div>
+        <div id="hoursPane" class="hidden"><div id="hoursTable"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Popup: Ansicht wie beim Hotel/Gast + Infos für die Disposition -->
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <button class="close" id="closeBtn" type="button">×</button>
+      <div class="pcard">
+        <div class="steps-title">Fahrer</div>
+        <div class="steps" id="pSteps"></div>
+        <div id="pGuestSteps" class="hidden">
+          <div class="steps-gap"></div>
+          <div class="steps-title">Gast</div>
+          <div class="steps" id="pGSteps"></div>
+        </div>
+      </div>
+      <div class="pcard">
+        <div class="lbl">Disposition</div>
+        <div class="kv"><span>Auftragsnr.</span><b id="aNr"></b></div>
+        <div class="kv"><span>Hotel</span><b id="aHotel"></b></div>
+        <div class="kv"><span>Fahrer</span><b id="aDriver"></b></div>
+        <div class="kv"><span>Tracking-Mail ans Hotel</span><b id="aMail"></b></div>
+        <div class="kv"><span>Hotel → Gast weitergeleitet</span><b id="aFwd"></b></div>
+        <div id="aLinkRow" class="linkrow hidden"><input id="aLink" readonly /><button id="aCopy" type="button">Kopieren</button></div>
+      </div>
+      <div class="pcard drv hidden" id="pDriver">
+        <div id="pPhoto"></div>
+        <div class="hello" id="pHello"></div>
+        <div class="hello-sub">Ich bin heute Ihr Fahrer.</div>
+      </div>
+      <div class="pcard hidden" id="pDetails">
+        <div class="lbl">Fahrt im Überblick</div>
+        <div class="summary" id="pSummary"></div>
+      </div>
+      <div class="pcard">
+        <div class="lbl">Fahrt</div>
+        <div class="route">
+          <div class="rl"><div class="d1"></div><div class="ln"></div><div class="d2"></div></div>
+          <div class="rt">
+            <div><div class="k">Abholort</div><div class="v" id="pPickup"></div></div>
+            <div><div class="k" id="pDestK">Zielort</div><div class="v" id="pDest"></div></div>
+          </div>
+        </div>
+        <img id="pTermImg" class="pterm hidden" alt="Terminal" />
+        <div id="pTermHint" class="hint-right hidden"><span>➜</span><span id="pTermHintText"></span></div>
+      </div>
+      <div class="pcard hidden" id="pContact">
+        <div class="lbl">Kontakt zum Fahrer</div>
+        <a class="call" id="pCall" href="#">Fahrer anrufen</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Konfiguration (öffentliche Werte) ---
+    const SUPABASE_URL = 'https://apmaqbctnpxzkinmaiap.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwbWFxYmN0bnB4emtpbm1haWFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NjIxMzUsImV4cCI6MjA5MDQzODEzNX0.kpmLP9h-MCYJi954p1-s7dWvgFrAGGOy6V1KhlZZbTQ'
+    const POLL_MS = 30000
+    const DOW = ['Mo','Di','Mi','Do','Fr','Sa','So']
+    const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember']
+    // Dieselben Fahrten, die auch das Hotel sieht (ab Annahme durch den Fahrer).
+    const VISIBLE = ['angenommen','unterwegs','angekommen','an_bord','abgeschlossen']
+    const STAGE = { angenommen:1, unterwegs:2, angekommen:3, an_bord:4, abgeschlossen:5 }
+    const TERMINALS = {
+      '1': { img: '../terminal1.jpg', hint: 'TO YOUR RIGHT' },
+      '2': { img: '../terminal2.jpg', hint: 'TO YOUR RIGHT' },
+    }
+    const SEATS = { babyschale: 'Babyschale', kindersitz: 'Kindersitz', sitzerhoehung: 'Sitzerhöhung' }
+    const ORDER_SELECT = [
+      'id','status','order_number','passenger_name','booking_type','scheduled_at','scheduled_until',
+      'pickup_location','destination','terminal','partner_id','passenger_count','children_details','vehicles',
+      'tracking_token','tracking_email_sent_at','hotel_link_sent','partner_link_forwarded',
+      'partners(name)','drivers!orders_assigned_driver_id_fkey(name,first_name,phone,profile_photo_url)','order_drivers(role)',
+    ].join(',')
+
+    const $ = id => document.getElementById(id)
+    const enc = d => encodeURIComponent(d.toISOString())
+
+    let orders = [], partners = [], drivers = [], sessions = [], dayOrders = []
+    let tab = 'rides', hotel = ''
+    let selected = startOfDay(new Date())
+    let view = new Date(selected.getFullYear(), selected.getMonth(), 1)
+    let openId = null, pollTimer = null
+
+    // ---------------- Hilfsfunktionen ----------------
+    function startOfDay(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()) }
+    function addDays(d, n){ const x = new Date(d); x.setDate(x.getDate()+n); return x }
+    function dayKey(d){ return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate() }
+    function getMonday(d){ const x = startOfDay(d); return addDays(x, -((x.getDay()+6)%7)) }
+    function weekNumber(d){
+      const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
+      const dayNum = date.getUTCDay() || 7
+      date.setUTCDate(date.getUTCDate() + 4 - dayNum)
+      const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
+      return Math.ceil(((date - yearStart) / 86400000 + 1) / 7)
+    }
+    function fmtTime(iso){ return iso ? new Date(iso).toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit'}) : '' }
+    function fmtDate(d){ return d.toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'}) }
+    function fmtDateTime(iso){ return iso ? fmtDate(new Date(iso)) + ' ' + fmtTime(iso) : '—' }
+    function fmtDateLong(d){ return DOW[(d.getDay()+6)%7]+', '+d.getDate()+'. '+MONTHS[d.getMonth()]+' '+d.getFullYear() }
+    function fmtDur(mins){ const h = Math.floor(mins/60), m = Math.round(mins%60); return h+'h '+String(m).padStart(2,'0')+'m' }
+    function statusLabel(s){ return {angenommen:'Angenommen',unterwegs:'Unterwegs',angekommen:'Angekommen',an_bord:'Gast an Bord',abgeschlossen:'Abgeschlossen'}[s] || s }
+    function initials(n){ return (n||'').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase() || '·' }
+    function withTerminal(loc, t){ return (loc || '—') + (t ? ' · Terminal ' + t : '') }
+    function intlPhone(raw){
+      const s = String(raw || '').trim().replace(/\(0\)/g, '')
+      const digits = s.replace(/\D/g, '')
+      if (!digits) return ''
+      if (s.startsWith('+')) return '+' + digits
+      if (digits.startsWith('00')) return '+' + digits.slice(2)
+      if (digits.startsWith('0')) return '+43' + digits.slice(1)
+      if (/^(43|41|49|423)\d{8,}$/.test(digits)) return '+' + digits
+      return '+43' + digits
+    }
+    function rideSummary(o){
+      const cars = Math.max(o.car_count || 1, 1)
+      const pax = o.passenger_count || 0
+      const luggage = o.luggage_cars || 0
+      let t = 'Abholung mit ' + cars + (cars === 1 ? ' Fahrzeug' : ' Fahrzeugen')
+      if (pax) t += ' für ' + pax + (pax === 1 ? ' Person' : ' Personen')
+      t += '.'
+      if (cars > 1 && luggage > 0) t += luggage === 1 ? ' Davon 1 Fahrzeug nur für das Gepäck.' : ' Davon ' + luggage + ' Fahrzeuge nur für das Gepäck.'
+      const counts = {}
+      ;(o.child_seats || []).forEach(s => { if (SEATS[s]) counts[s] = (counts[s] || 0) + 1 })
+      const seats = Object.keys(counts).map(k => counts[k] + ' × ' + SEATS[k])
+      if (seats.length) t += ' Kinderausstattung: ' + seats.join(', ') + '.'
+      return t
+    }
+    function toast(msg, bad){
+      const t = $('toast'); t.textContent = msg; t.className = 'toast' + (bad ? ' bad' : '')
+      clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.add('hidden'), 4000)
+    }
+    function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e }
+
+    // Auftrag aus der DB → gleiche Felder wie get_partner_orders (Hotel-Ansicht).
+    function toView(o){
+      const d = o.drivers || null
+      const done = o.status === 'abgeschlossen'
+      const team = (o.order_drivers || []).filter(x => x.role === 'gepaeck').length
+      const veh = (Array.isArray(o.vehicles) ? o.vehicles : []).filter(v => String(v || '').trim())
+      const vehLuggage = veh.filter(v => /luggage|gepäck|gepaeck/i.test(v)).length
+      return Object.assign({}, o, {
+        order_id: o.id,
+        hotel_name: o.partners ? o.partners.name : '',
+        stage: STAGE[o.status] || 1,
+        driver_name: d ? d.name : null,
+        driver_first_name: done || !d ? null : ((d.first_name || '').trim() || (d.name || '').split(' ')[0]),
+        driver_phone: done || !d ? null : d.phone,
+        driver_photo_url: done || !d ? null : d.profile_photo_url,
+        car_count: Math.max(veh.length, 1 + team),
+        luggage_cars: Math.max(vehLuggage, team),
+        child_seats: (Array.isArray(o.children_details) ? o.children_details : []).map(c => c && c.seat).filter(Boolean),
+      })
+    }
+
+    // ---------------- Supabase (mit Clerk-Token → RLS: nur Admin) ----------------
+    async function api(path, init){
+      const tok = await window.Clerk.session.getToken()
+      const opts = init || {}
+      const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, Object.assign({}, opts, {
+        headers: Object.assign({ apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, opts.headers || {}),
+      }))
+      if (!res.ok) {
+        let msg = 'HTTP ' + res.status
+        try { const b = await res.json(); msg = b.message || msg } catch (e) {}
+        throw new Error(msg)
+      }
+      const txt = await res.text()
+      return txt ? JSON.parse(txt) : null
+    }
+
+    async function loadOrders(){
+      const [o, p, d] = await Promise.all([
+        api('orders?select=' + ORDER_SELECT + '&partner_id=not.is.null&status=in.(' + VISIBLE.join(',') + ')&order=scheduled_at'),
+        api('partners?select=id,name&order=name'),
+        api('drivers?select=id,name,is_active&order=name'),
+      ])
+      orders = (o || []).map(toView)
+      partners = p || []
+      drivers = d || []
+      fillHotelSelect()
+    }
+
+    // Sitzungen der gewählten Woche (+ Vortag für Nachtschichten) und alle laufenden.
+    async function loadSessions(){
+      const monday = getMonday(selected)
+      const cols = 'select=id,driver_id,started_at,ended_at,duration_minutes,is_edited'
+      const [week, running] = await Promise.all([
+        api('work_sessions?' + cols + '&started_at=gte.' + enc(addDays(monday, -1)) + '&started_at=lt.' + enc(addDays(monday, 7)) + '&order=started_at'),
+        api('work_sessions?' + cols + '&ended_at=is.null'),
+      ])
+      const byId = {}
+      ;(week || []).concat(running || []).forEach(s => { byId[s.id] = s })
+      sessions = Object.values(byId).sort((a, b) => new Date(a.started_at) - new Date(b.started_at))
+    }
+
+    // Alle Fahrten des Tages mit Fahrer (auch ohne Hotel) → "Erste Fahrt" je Fahrer.
+    async function loadDayOrders(){
+      const from = startOfDay(selected)
+      dayOrders = await api('orders?select=assigned_driver_id,scheduled_at,status&assigned_driver_id=not.is.null'
+        + '&status=not.in.(storno,abgelehnt)&scheduled_at=gte.' + enc(from) + '&scheduled_at=lt.' + enc(addDays(from, 1)) + '&order=scheduled_at') || []
+    }
+
+    async function refresh(){
+      try {
+        await Promise.all([loadOrders(), loadSessions(), loadDayOrders()])
+        $('loadErr').classList.add('hidden')
+      } catch (e) {
+        $('loadErr').textContent = 'Daten konnten nicht geladen werden: ' + e.message
+        $('loadErr').classList.remove('hidden')
+      }
+      renderAll()
+    }
+
+    // Erinnerung für die Disposition: Link ans Hotel geschickt?
+    async function setHotelLinkSent(o, value){
+      const prev = !!o.hotel_link_sent
+      o.hotel_link_sent = value
+      renderRides()
+      try {
+        const rows = await api('orders?id=eq.' + o.id, {
+          method: 'PATCH',
+          headers: { Prefer: 'return=representation' },
+          body: JSON.stringify({ hotel_link_sent: value }),
+        })
+        if (!Array.isArray(rows) || rows.length === 0) throw new Error('keine Berechtigung')
+      } catch (e) {
+        o.hotel_link_sent = prev
+        renderRides()
+        toast('Konnte nicht gespeichert werden: ' + e.message, true)
+      }
+    }
+
+    // ---------------- Darstellung ----------------
+    function fillHotelSelect(){
+      const sel = $('hotelSel')
+      const current = sel.value
+      sel.innerHTML = ''
+      sel.appendChild(Object.assign(document.createElement('option'), { value: '', textContent: 'Alle Hotels' }))
+      partners.forEach(p => sel.appendChild(Object.assign(document.createElement('option'), { value: p.id, textContent: p.name })))
+      sel.value = partners.some(p => p.id === current) ? current : ''
+      hotel = sel.value
+    }
+
+    function visibleOrders(){ return hotel ? orders.filter(o => o.partner_id === hotel) : orders }
+    function ridesForDay(d){
+      const k = dayKey(d)
+      return visibleOrders().filter(o => dayKey(new Date(o.scheduled_at)) === k)
+    }
+
+    function renderCalendar(){
+      $('calTitle').textContent = MONTHS[view.getMonth()]+' '+view.getFullYear()
+      const grid = $('calGrid'); grid.innerHTML = ''
+      DOW.forEach(d => grid.appendChild(el('div', 'cal-dow', d)))
+      const first = new Date(view.getFullYear(), view.getMonth(), 1)
+      const start = addDays(first, -((first.getDay()+6)%7))
+      const today = startOfDay(new Date())
+      const daysWith = new Set(visibleOrders().map(o => dayKey(new Date(o.scheduled_at))))
+      for (let i = 0; i < 42; i++){
+        const d = addDays(start, i)
+        const cell = el('div', 'cal-day', String(d.getDate()))
+        if (d.getMonth() !== view.getMonth()) cell.classList.add('other')
+        if (dayKey(d) === dayKey(today)) cell.classList.add('today')
+        if (dayKey(d) === dayKey(selected)) cell.classList.add('selected')
+        if (daysWith.has(dayKey(d))) cell.appendChild(el('div', 'dot'))
+        cell.onclick = () => selectDay(d)
+        grid.appendChild(cell)
+      }
+    }
+
+    async function selectDay(d){
+      const weekChanged = dayKey(getMonday(d)) !== dayKey(getMonday(selected))
+      selected = startOfDay(d)
+      view = new Date(d.getFullYear(), d.getMonth(), 1)
+      renderAll()
+      try {
+        await Promise.all([weekChanged ? loadSessions() : null, loadDayOrders()])
+      } catch (e) { /* nächster Poll */ }
+      renderAll()
+    }
+
+    function renderHeader(){
+      if (tab === 'hours'){
+        const monday = getMonday(selected)
+        $('dayTitle').textContent = 'KW ' + weekNumber(monday)
+        $('daySub').textContent = fmtDate(monday) + ' – ' + fmtDate(addDays(monday, 6))
+        return
+      }
+      $('dayTitle').textContent = fmtDateLong(selected)
+      if (tab === 'rides'){
+        const n = ridesForDay(selected).length
+        $('daySub').textContent = n ? (n === 1 ? '1 Fahrt' : n + ' Fahrten') : ''
+      } else {
+        const on = drivers.filter(d => sessions.some(s => s.driver_id === d.id && !s.ended_at)).length
+        $('daySub').textContent = on ? (on === 1 ? '1 Fahrer gerade im Dienst' : on + ' Fahrer gerade im Dienst') : 'Gerade niemand im Dienst'
+      }
+    }
+
+    function renderRides(){
+      const area = $('ridesList')
+      const list = ridesForDay(selected)
+      if (list.length === 0){ area.innerHTML = '<div class="empty">Keine Fahrten an diesem Tag.</div>'; return }
+      const cards = el('div', 'cards')
+      list.forEach(o => {
+        const c = el('div', 'ride')
+        const time = o.booking_type === 'stunden' && o.scheduled_until
+          ? fmtTime(o.scheduled_at) + ' – ' + fmtTime(o.scheduled_until) : fmtTime(o.scheduled_at)
+        c.append(el('div', 'time', time), el('div', 'name', o.passenger_name || 'Gast'), el('div', 'hotel', o.hotel_name))
+        const pill = el('span', 'pill st-' + o.status)
+        pill.append(el('span', 'pdot'), statusLabel(o.status))
+        c.appendChild(pill)
+
+        const r = el('div', 'remind')
+        r.appendChild(el('div', 'remind-q', 'Hast du schon den Link an das Hotel rausgeschickt?'))
+        const yn = el('div', 'yn')
+        const yes = el('button', 'yn-b yes' + (o.hotel_link_sent ? ' on' : ''), 'Ja')
+        const no = el('button', 'yn-b no' + (o.hotel_link_sent ? '' : ' on'), 'Nein')
+        yes.type = no.type = 'button'
+        yes.onclick = () => { if (!o.hotel_link_sent) setHotelLinkSent(o, true) }
+        no.onclick = () => { if (o.hotel_link_sent) setHotelLinkSent(o, false) }
+        yn.append(yes, no)
+        r.appendChild(yn)
+        if (o.tracking_email_sent_at) r.appendChild(el('div', 'remind-info', 'Tracking-Mail per App: ' + fmtDateTime(o.tracking_email_sent_at)))
+        r.appendChild(el('div', 'remind-info' + (o.partner_link_forwarded ? ' ok' : ''),
+          o.partner_link_forwarded ? '✓ Hotel hat den Link an den Gast weitergeleitet' : 'Hotel: Link noch nicht an den Gast weitergeleitet'))
+        r.onclick = (e) => e.stopPropagation()
+        c.appendChild(r)
+
+        c.onclick = () => openPopup(o.order_id)
+        cards.appendChild(c)
+      })
+      area.innerHTML = ''
+      area.appendChild(cards)
+    }
+
+    // Dienstzeit pro Tag: wer hat den Dienst gestartet (= ist losgefahren)?
+    function renderDuty(){
+      const area = $('dutyList')
+      const from = startOfDay(selected).getTime()
+      const to = addDays(startOfDay(selected), 1).getTime()
+      const isFuture = from > Date.now()
+      const rows = drivers.map(d => {
+        const ss = sessions.filter(s => s.driver_id === d.id
+          && new Date(s.started_at).getTime() < to
+          && (!s.ended_at || new Date(s.ended_at).getTime() >= from))
+        const firstRide = dayOrders.find(o => o.assigned_driver_id === d.id) || null
+        return { d, ss, firstRide, active: ss.some(s => !s.ended_at) }
+      }).filter(x => x.d.is_active || x.ss.length)
+      rows.sort((a, b) => (b.active - a.active) || (b.ss.length > 0) - (a.ss.length > 0) || a.d.name.localeCompare(b.d.name))
+
+      if (rows.length === 0){ area.innerHTML = '<div class="empty">Keine Fahrer angelegt.</div>'; return }
+      const box = el('div', 'duty')
+      rows.forEach(x => {
+        const row = el('div', 'duty-row')
+        const left = el('div')
+        left.appendChild(el('div', 'duty-name', x.d.name))
+        const lines = x.ss.map(s => {
+          if (!s.ended_at) return fmtTime(s.started_at) + ' – läuft (' + fmtDur((Date.now() - new Date(s.started_at)) / 60000) + ')'
+          const mins = s.duration_minutes != null ? s.duration_minutes : (new Date(s.ended_at) - new Date(s.started_at)) / 60000
+          return fmtTime(s.started_at) + ' – ' + fmtTime(s.ended_at) + ' · ' + fmtDur(mins) + (s.is_edited ? ' (korr.)' : '')
+        })
+        if (x.firstRide) lines.push('Erste Fahrt: ' + fmtTime(x.firstRide.scheduled_at))
+        if (lines.length){
+          const l = el('div', 'duty-lines')
+          lines.forEach((t, i) => { if (i) l.appendChild(document.createElement('br')); l.append(t) })
+          left.appendChild(l)
+        }
+        if (x.firstRide && x.ss.length === 0 && !isFuture){
+          left.appendChild(el('div', 'duty-warn', '⚠ Fahrt um ' + fmtTime(x.firstRide.scheduled_at) + ' zugewiesen – noch kein Dienst gestartet'))
+        }
+        const chip = x.active
+          ? el('span', 'chip on', 'Im Dienst seit ' + fmtTime(x.ss.find(s => !s.ended_at).started_at))
+          : x.ss.length ? el('span', 'chip done', 'Dienst beendet') : el('span', 'chip none', 'Kein Dienst')
+        row.append(left, chip)
+        box.appendChild(row)
+      })
+      area.innerHTML = ''
+      area.appendChild(box)
+    }
+
+    // Wochenstunden wie im Admin-Bereich der App (abgeschlossene Sitzungen).
+    function renderHours(){
+      const area = $('hoursTable')
+      const monday = getMonday(selected)
+      const next = addDays(monday, 7)
+      const rows = drivers.map(d => {
+        const days = [0,0,0,0,0,0,0]
+        let edited = false
+        const mine = sessions.filter(s => s.driver_id === d.id)
+        mine.forEach(s => {
+          const start = new Date(s.started_at)
+          if (start < monday || start >= next) return
+          if (s.ended_at && s.duration_minutes) days[(start.getDay()+6)%7] += s.duration_minutes / 60
+          if (s.is_edited) edited = true
+        })
+        return { d, days, edited, live: mine.some(s => !s.ended_at) }
+      }).filter(x => x.d.is_active || x.days.some(h => h > 0))
+
+      const table = el('table')
+      const head = el('tr')
+      ;['Fahrer'].concat(DOW, ['Gesamt']).forEach(h => head.appendChild(el('th', null, h)))
+      table.appendChild(head)
+      rows.forEach(x => {
+        const tr = el('tr')
+        const name = el('td', null, x.d.name)
+        if (x.live) name.appendChild(el('span', 'badge live', 'im Dienst'))
+        if (x.edited) name.appendChild(el('span', 'badge', 'Korr.'))
+        tr.appendChild(name)
+        x.days.forEach(h => tr.appendChild(el('td', h > 0 ? null : 'zero', h > 0 ? h.toFixed(1) : '—')))
+        tr.appendChild(el('td', 'total', x.days.reduce((a, b) => a + b, 0).toFixed(1) + 'h'))
+        table.appendChild(tr)
+      })
+      const wrap = el('div', 'tbl-wrap')
+      wrap.appendChild(table)
+      area.innerHTML = ''
+      area.appendChild(wrap)
+    }
+
+    function renderAll(){
+      renderHeader()
+      renderCalendar()
+      $('ridesPane').classList.toggle('hidden', tab !== 'rides')
+      $('dutyPane').classList.toggle('hidden', tab !== 'duty')
+      $('hoursPane').classList.toggle('hidden', tab !== 'hours')
+      if (tab === 'rides') renderRides()
+      if (tab === 'duty') renderDuty()
+      if (tab === 'hours') renderHours()
+      if (openId){ const o = orders.find(x => x.order_id === openId); if (o) fillPopup(o); else closePopup() }
+    }
+
+    // ---------------- Popup ----------------
+    function buildSteps(box, labels, reached){
+      box.innerHTML = ''
+      labels.forEach((label, i) => {
+        const step = el('div', 'step' + (i + 1 <= reached ? ' done' : ''))
+        step.append(el('div', 'sb'), el('div', 'sd', '✓'), el('div', 'sl', label))
+        box.appendChild(step)
+      })
+    }
+
+    function fillPopup(o){
+      const stage = o.stage || 1
+      buildSteps($('pSteps'), ['Informiert','Unterwegs','Angekommen'], Math.min(stage, 3))
+      $('pGuestSteps').classList.toggle('hidden', stage < 3)
+      buildSteps($('pGSteps'), ['An Bord','Angekommen'], Math.max(stage - 3, 0))
+
+      $('aNr').textContent = o.order_number || '—'
+      $('aHotel').textContent = o.hotel_name || '—'
+      $('aDriver').textContent = o.driver_name || '—'
+      $('aMail').textContent = o.tracking_email_sent_at ? 'gesendet ' + fmtDateTime(o.tracking_email_sent_at) : (o.hotel_link_sent ? 'manuell erledigt' : 'noch nicht')
+      $('aFwd').textContent = o.partner_link_forwarded ? 'Ja' : 'Nein'
+      if (o.tracking_token){
+        $('aLink').value = new URL('../index.html?token=' + o.tracking_token, location.href).href
+        $('aLinkRow').classList.remove('hidden')
+      } else {
+        $('aLinkRow').classList.add('hidden')
+      }
+
+      const hasDriver = !!o.driver_first_name
+      const phone = hasDriver ? intlPhone(o.driver_phone) : ''
+      $('pDriver').classList.toggle('hidden', !hasDriver)
+      $('pDetails').classList.toggle('hidden', !hasDriver)
+      $('pContact').classList.toggle('hidden', !phone)
+      if (hasDriver){
+        $('pHello').textContent = 'Hallo, ich bin ' + o.driver_first_name + '.'
+        $('pSummary').textContent = rideSummary(o)
+        const slot = $('pPhoto')
+        const fallback = () => { slot.textContent = ''; slot.appendChild(el('div', 'photo-fb', initials(o.driver_first_name))) }
+        slot.textContent = ''
+        if (o.driver_photo_url){
+          const img = el('img', 'photo'); img.src = o.driver_photo_url; img.onerror = fallback
+          slot.appendChild(img)
+        } else fallback()
+        if (phone){ $('pCall').href = 'tel:' + phone; $('pCall').textContent = 'Fahrer anrufen · ' + phone }
+      }
+      $('pPickup').textContent = withTerminal(o.pickup_location, o.terminal)
+      if (o.booking_type === 'stunden'){
+        $('pDestK').textContent = 'Buchung'
+        $('pDest').textContent = 'Stundenbuchung' + (o.scheduled_until ? ' (' + fmtTime(o.scheduled_at) + ' – ' + fmtTime(o.scheduled_until) + ')' : '')
+      } else {
+        $('pDestK').textContent = 'Zielort'
+        $('pDest').textContent = o.destination || '—'
+      }
+      const term = o.status === 'abgeschlossen' ? null : TERMINALS[o.terminal]
+      const ti = $('pTermImg')
+      if (term){
+        if (ti.getAttribute('src') !== term.img) ti.src = term.img
+        ti.classList.remove('hidden')
+        $('pTermHintText').textContent = term.hint
+        $('pTermHint').classList.remove('hidden')
+      } else {
+        ti.classList.add('hidden')
+        $('pTermHint').classList.add('hidden')
+      }
+    }
+
+    function openPopup(id){ openId = id; const o = orders.find(x => x.order_id === id); if (!o) return; fillPopup(o); $('overlay').classList.add('show') }
+    function closePopup(){ openId = null; $('overlay').classList.remove('show') }
+
+    // ---------------- Login (Clerk) ----------------
+    function show(viewId){
+      ;['bootView', 'loginView', 'denyView', 'appView'].forEach(id => $(id).classList.toggle('hidden', id !== viewId))
+    }
+
+    function clerkMsg(err){
+      const first = err && err.errors && err.errors[0]
+      switch (first && first.code) {
+        case 'form_password_incorrect': return 'Passwort falsch.'
+        case 'form_identifier_not_found': return 'Kein Benutzer mit dieser E-Mail.'
+        case 'form_param_format_invalid': return 'E-Mail-Format ungültig.'
+        case 'form_param_nil':
+        case 'form_param_missing': return 'Bitte E-Mail und Passwort eingeben.'
+        case 'too_many_requests':
+        case 'rate_limit_exceeded': return 'Zu viele Versuche. Bitte kurz warten.'
+        case 'session_exists': return 'Bereits angemeldet – bitte Seite neu laden.'
+      }
+      return (first && (first.longMessage || first.message)) || (err && err.message) || 'Anmeldung fehlgeschlagen.'
+    }
+
+    function route(){
+      const user = window.Clerk.user
+      if (!user) { show('loginView'); return }
+      if ((user.publicMetadata || {}).role !== 'admin') { show('denyView'); return }
+      $('userEmail').textContent = user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : ''
+      show('appView')
+      renderAll()
+      refresh()
+      if (!pollTimer) pollTimer = setInterval(refresh, POLL_MS)
+    }
+
+    async function startClerk(){
+      try {
+        await window.Clerk.load()
+      } catch (e) {
+        clerkFailed()
+        return
+      }
+      route()
+    }
+
+    function clerkFailed(){
+      show('loginView')
+      $('liErr').textContent = 'Anmeldedienst nicht erreichbar. Bitte Seite neu laden.'
+      $('liErr').classList.remove('hidden')
+      $('liBtn').disabled = true
+    }
+
+    async function logout(){
+      if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
+      try { await window.Clerk.signOut() } catch (e) {}
+      orders = []; sessions = []; dayOrders = []
+      show('loginView')
+    }
+
+    $('loginForm').onsubmit = async (e) => {
+      e.preventDefault()
+      const email = $('liEmail').value.trim()
+      const password = $('liPass').value
+      $('liErr').classList.add('hidden')
+      $('liBtn').disabled = true
+      try {
+        const si = await window.Clerk.client.signIn.create({ identifier: email, password })
+        if (si.status === 'complete') {
+          await window.Clerk.setActive({ session: si.createdSessionId })
+          $('liPass').value = ''
+          route()
+        } else {
+          $('liErr').textContent = 'Anmeldung nicht abgeschlossen (Status: ' + si.status + ').'
+          $('liErr').classList.remove('hidden')
+        }
+      } catch (err) {
+        $('liErr').textContent = clerkMsg(err)
+        $('liErr').classList.remove('hidden')
+      }
+      $('liBtn').disabled = false
+    }
+
+    $('logoutBtn').onclick = (e) => { e.preventDefault(); logout() }
+    $('denyLogout').onclick = logout
+    document.querySelectorAll('.tab').forEach(b => {
+      b.onclick = () => {
+        tab = b.dataset.tab
+        document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === b))
+        renderAll()
+      }
+    })
+    $('hotelSel').onchange = () => { hotel = $('hotelSel').value; renderAll() }
+    $('prevM').onclick = () => { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); renderCalendar() }
+    $('nextM').onclick = () => { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); renderCalendar() }
+    $('closeBtn').onclick = closePopup
+    $('overlay').onclick = (e) => { if (e.target === $('overlay')) closePopup() }
+    $('aCopy').onclick = async () => {
+      try { await navigator.clipboard.writeText($('aLink').value); toast('Link kopiert.') }
+      catch (e) { $('aLink').select(); toast('Bitte Link manuell kopieren.', true) }
+    }
+  </script>
+  <!-- Clerk (gleiche Instanz wie die App; Publishable Key ist öffentlich) -->
+  <script async crossorigin="anonymous"
+    data-clerk-publishable-key="pk_test_c2VsZWN0ZWQtbGFkeWJpcmQtNjUuY2xlcmsuYWNjb3VudHMuZGV2JA"
+    src="https://selected-ladybird-65.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
+    onload="startClerk()" onerror="clerkFailed()"></script>
+</body>
+</html>
