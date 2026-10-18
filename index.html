@@ -48,6 +48,8 @@
     .step.done .bar, .step.current .bar { background: var(--green); }
     .step .lbl { margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--muted); text-align: center; }
     .step.done .lbl, .step.current .lbl { color: var(--text); }
+    .step .tm { margin-top: 2px; font-size: 12px; color: var(--sub); font-variant-numeric: tabular-nums; }
+    .step .tm:empty { display: none; }
 
     /* --- Fahrer --- */
     .driver { text-align: center; }
@@ -60,7 +62,16 @@
     .hello-sub { font-size: 15px; color: var(--sub); margin-top: 4px; }
 
     .label { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
-    .summary { font-size: 15px; line-height: 1.6; }
+    /* Fahrt im Überblick: Kennzahlen als Kacheln, Kinderausstattung als Badges */
+    .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 10px; }
+    .fact { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 8px 12px; text-align: center; }
+    .fact .n { font-size: 28px; font-weight: 800; line-height: 1; }
+    .fact .t { font-size: 12px; font-weight: 600; color: var(--sub); margin-top: 6px; }
+    .extras { margin-top: 16px; }
+    .extras .k { font-size: 12px; font-weight: 600; color: var(--sub); margin-bottom: 8px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { background: var(--greenbg); color: var(--text); border-radius: 999px; padding: 7px 12px; font-size: 14px; font-weight: 600; }
+    .chip b { color: var(--green); font-weight: 800; margin-right: 4px; }
     .route { display: flex; gap: 12px; }
     .route-line { display: flex; flex-direction: column; align-items: center; padding-top: 4px; }
     .route-line .d1 { width: 10px; height: 10px; border-radius: 50%; background: var(--blue); }
@@ -79,7 +90,7 @@
       background: var(--accent); color: #fff; border-radius: 10px; padding: 12px 14px;
       font-size: 15px; font-weight: 800; letter-spacing: 1px;
     }
-    .hint-right .arr { font-size: 22px; line-height: 1; }
+    .hint-right svg { flex: 0 0 auto; }
 
     .call {
       display: block; width: 100%; border: none; cursor: pointer; font-family: inherit;
@@ -93,8 +104,7 @@
     .ask-ov { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: flex-end; justify-content: center; z-index: 40; }
     .ask-ov.show { display: flex; }
     .ask-box { background: var(--card); width: 100%; max-width: 440px; border-radius: 18px 18px 0 0; padding: 22px 18px 26px; }
-    .ask-title { font-size: 19px; font-weight: 700; text-align: center; }
-    .ask-sub { font-size: 13px; color: var(--sub); text-align: center; margin: 6px 0 14px; line-height: 1.45; }
+    .ask-title { font-size: 19px; font-weight: 700; text-align: center; margin-bottom: 8px; }
     .ask-btn { display: block; width: 100%; text-align: center; text-decoration: none; border: none; font-family: inherit;
       border-radius: 12px; padding: 15px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; }
     .btn-wa { background: var(--wa); color: #fff; }
@@ -111,7 +121,8 @@
 
     /* --- Warenkorb --- */
     .cart-btn { position: fixed; top: 16px; right: 16px; z-index: 20; width: 54px; height: 54px; border-radius: 50%;
-      background: var(--accent); color: #fff; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.22); }
+      background: var(--accent); color: #fff; border: none; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.22);
+      display: flex; align-items: center; justify-content: center; }
     .cart-count { position: absolute; top: -4px; right: -4px; background: var(--green); color: #fff; font-size: 12px; font-weight: 700;
       min-width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0 5px; }
     .shop-ov { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: flex-end; justify-content: center; z-index: 30; }
@@ -162,8 +173,8 @@
       <div class="card">
         <div class="steps">
           <div class="step" id="step1"><div class="bar"></div><div class="dot">✓</div><div class="lbl">Is informed</div></div>
-          <div class="step" id="step2"><div class="bar"></div><div class="dot">✓</div><div class="lbl">Is on his way</div></div>
-          <div class="step" id="step3"><div class="bar"></div><div class="dot">✓</div><div class="lbl">Arrived</div></div>
+          <div class="step" id="step2"><div class="bar"></div><div class="dot">✓</div><div class="lbl">Is on his way</div><div class="tm" id="step2t"></div></div>
+          <div class="step" id="step3"><div class="bar"></div><div class="dot">✓</div><div class="lbl">Arrived</div><div class="tm" id="step3t"></div></div>
         </div>
       </div>
 
@@ -172,7 +183,7 @@
         <div class="brand second">The guest</div>
         <div class="card">
           <div class="steps">
-            <div class="step" id="gstep1"><div class="bar"></div><div class="dot">✓</div><div class="lbl">Is on board</div></div>
+            <div class="step" id="gstep1"><div class="bar"></div><div class="dot">✓</div><div class="lbl">Is on board</div><div class="tm" id="gstep1t"></div></div>
             <div class="step" id="gstep2"><div class="bar"></div><div class="dot">✓</div><div class="lbl">Has arrived</div></div>
           </div>
         </div>
@@ -188,7 +199,7 @@
       <!-- Fahrt im Überblick: Autos, Personen, Kindersitze -->
       <div class="card hidden" id="detailsCard">
         <div class="label">Your ride at a glance</div>
-        <div class="summary" id="summaryText"></div>
+        <div id="summary"></div>
       </div>
 
       <!-- Route -->
@@ -210,7 +221,7 @@
           <div class="v" id="waitLoc"></div>
         </div>
         <img id="waitImg" class="wait-img hidden" alt="Meeting point" />
-        <div id="waitHint" class="hint-right hidden"><span class="arr">➜</span><span id="waitHintText"></span></div>
+        <div id="waitHint" class="hint-right hidden"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span id="waitHintText"></span></div>
       </div>
 
       <!-- Kontakt -->
@@ -227,7 +238,6 @@
   <div class="ask-ov" id="callAsk">
     <div class="ask-box">
       <div class="ask-title">Call via WhatsApp?</div>
-      <div class="ask-sub">WhatsApp opens the chat with your driver – tap the 📞 icon there to start the call.</div>
       <a class="ask-btn btn-wa" id="waBtn" href="#" target="_blank" rel="noopener">Yes, call via WhatsApp</a>
       <a class="ask-btn btn-tel" id="telBtn" href="#">No, normal phone call</a>
       <button class="ask-btn btn-cancel" id="askCancel" type="button">Cancel</button>
@@ -235,7 +245,7 @@
   </div>
 
   <button id="cartBtn" class="cart-btn hidden" aria-label="Snacks & drinks">
-    🛒<span id="cartCount" class="cart-count hidden">0</span>
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span id="cartCount" class="cart-count hidden">0</span>
   </button>
 
   <div class="shop-ov" id="shop">
@@ -268,9 +278,9 @@
       '2': { img: 'terminal2.jpg', hint: 'TO YOUR RIGHT' },
     }
     const SEATS = {
-      babyschale: ['baby seat', 'baby seats'],
-      kindersitz: ['child seat', 'child seats'],
-      sitzerhoehung: ['booster seat', 'booster seats'],
+      babyschale: ['Baby seat', 'Baby seats'],
+      kindersitz: ['Child seat', 'Child seats'],
+      sitzerhoehung: ['Booster seat', 'Booster seats'],
     }
     const API_HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }
 
@@ -302,6 +312,7 @@
         if (i === reached && pulse) el.classList.add('current')
       }
     }
+    function setStepTime(id, iso) { $(id).textContent = iso ? fmtTime(iso) : '' }
 
     // Nummer immer mit Ländervorwahl (Standard +43), damit der Gast auch mit ausländischem Handy anrufen kann.
     function intlPhone(raw) {
@@ -322,30 +333,56 @@
     function withTerminal(loc, terminal) { return (loc || '—') + (terminal ? ' · Terminal ' + terminal : '') }
     function fmtDay(iso) { return new Date(iso).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ }) }
     function fmtTime(iso) { return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: TZ }) }
-    function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many) }
 
     function initials(name) {
       return name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '·'
     }
 
-    // Längerer Fließtext: Anzahl Autos, Personen, Kinderausstattung (falls vorhanden).
-    function rideSummary(info) {
+    function el(tag, cls, text) {
+      const e = document.createElement(tag)
+      if (cls) e.className = cls
+      if (text != null) e.textContent = text
+      return e
+    }
+
+    // Kennzahlen als Kacheln (Autos, Personen, Gepäckwagen) + Kinderausstattung als Badges.
+    function renderSummary(info) {
       const cars = Math.max(info.car_count || 1, 1)
       const pax = info.passenger_count || 0
-      const luggage = info.luggage_cars || 0
-      let text = 'We are picking you up with ' + plural(cars, 'vehicle', 'vehicles')
-      if (pax) text += ' for ' + plural(pax, 'passenger', 'passengers')
-      text += '.'
-      if (cars > 1 && luggage > 0) {
-        text += luggage === 1
-          ? ' One vehicle is reserved just for your luggage.'
-          : ' ' + luggage + ' vehicles are reserved just for your luggage.'
-      }
+      const luggage = cars > 1 ? (info.luggage_cars || 0) : 0
       const counts = {}
       ;(info.child_seats || []).forEach(s => { if (SEATS[s]) counts[s] = (counts[s] || 0) + 1 })
-      const seats = Object.keys(counts).map(k => counts[k] + ' × ' + SEATS[k][counts[k] === 1 ? 0 : 1])
-      if (seats.length) text += ' Child equipment on board: ' + seats.join(', ') + '.'
-      return text
+
+      const box = $('summary')
+      const key = JSON.stringify([cars, pax, luggage, counts])
+      if (box.dataset.key === key) return
+      box.dataset.key = key
+      box.textContent = ''
+
+      const facts = [[cars, cars === 1 ? 'Vehicle' : 'Vehicles']]
+      if (pax) facts.push([pax, pax === 1 ? 'Passenger' : 'Passengers'])
+      if (luggage) facts.push([luggage, luggage === 1 ? 'Luggage vehicle' : 'Luggage vehicles'])
+      const grid = el('div', 'facts')
+      facts.forEach(([n, t]) => {
+        const f = el('div', 'fact')
+        f.append(el('div', 'n', String(n)), el('div', 't', t))
+        grid.append(f)
+      })
+      box.append(grid)
+
+      const kinds = Object.keys(counts)
+      if (kinds.length) {
+        const ex = el('div', 'extras')
+        ex.append(el('div', 'k', 'Child equipment on board'))
+        const chips = el('div', 'chips')
+        kinds.forEach(k => {
+          const c = el('span', 'chip')
+          c.append(el('b', null, counts[k] + ' ×'), SEATS[k][counts[k] === 1 ? 0 : 1])
+          chips.append(c)
+        })
+        ex.append(chips)
+        box.append(ex)
+      }
     }
 
     function renderPhoto(info) {
@@ -378,6 +415,10 @@
       setSteps('step', 3, Math.min(stage, 3), stage <= 3)
       $('guestBlock').classList.toggle('hidden', stage < 3)
       setSteps('gstep', 2, Math.max(stage - 3, 0), true)
+      // Uhrzeit (HH:MM) unter den erreichten Schritten.
+      setStepTime('step2t', stage >= 2 && info.unterwegs_at)
+      setStepTime('step3t', stage >= 3 && info.angekommen_at)
+      setStepTime('gstep1t', stage >= 4 && info.an_bord_at)
 
       // Abholdatum
       const pd = $('pickupDate')
@@ -411,7 +452,7 @@
 
       if (hasDriver) {
         $('hello').textContent = 'Hello, I\'m ' + info.driver_first_name + '.'
-        $('summaryText').textContent = rideSummary(info)
+        renderSummary(info)
         $('waitLoc').textContent = withTerminal(info.pickup_location, info.terminal)
 
         // Terminal-Foto (ZRH) + Richtungshinweis.

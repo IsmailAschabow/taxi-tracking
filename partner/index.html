@@ -87,6 +87,7 @@
     .step.done .sb { background:var(--green); }
     .step .sl { margin-top:8px; font-size:12px; font-weight:600; color:var(--muted); text-align:center; }
     .step.done .sl { color:var(--text); }
+    .step .stime { margin-top:2px; font-size:12px; color:var(--sub); font-variant-numeric:tabular-nums; }
     .steps-title { font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
     .steps-gap { height:18px; }
     .drv { text-align:center; }
@@ -170,7 +171,7 @@
           </div>
         </div>
         <img id="pTermImg" class="pterm hidden" alt="Terminal" />
-        <div id="pTermHint" class="hint-right hidden"><span>➜</span><span id="pTermHintText"></span></div>
+        <div id="pTermHint" class="hint-right hidden"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span id="pTermHintText"></span></div>
       </div>
       <div class="pcard hidden" id="pContact">
         <div class="lbl">Kontakt zum Fahrer</div>
@@ -208,7 +209,7 @@
 
     function startOfDay(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()) }
     function dayKey(d){ return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate() }
-    function fmtTime(iso){ return iso ? new Date(iso).toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit'}) : '' }
+    function fmtTime(iso){ return iso ? new Date(iso).toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Vienna'}) : '' }
     function fmtDateLong(d){ return DOW[(d.getDay()+6)%7]+', '+d.getDate()+'. '+MONTHS[d.getMonth()]+' '+d.getFullYear() }
     function statusLabel(s){ return {angenommen:'Angenommen',unterwegs:'Unterwegs',angekommen:'Angekommen',an_bord:'Gast an Bord',abgeschlossen:'Abgeschlossen'}[s] || s }
     function initials(n){ return (n||'').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase() || '·' }
@@ -347,21 +348,24 @@
       if (openId){ const o = orders.find(x=>x.order_id===openId); if (o) fillPopup(o); else closePopup() }
     }
 
-    function buildSteps(el, labels, reached){
+    // times[i]: Zeitpunkt des Schritts – wird als HH:MM unter erledigten Schritten angezeigt.
+    function buildSteps(el, labels, reached, times){
       el.innerHTML=''
       labels.forEach((label, i) => {
-        const step=document.createElement('div'); step.className='step'+(i+1<=reached?' done':'')
+        const done = i+1 <= reached
+        const step=document.createElement('div'); step.className='step'+(done?' done':'')
         step.innerHTML='<div class="sb"></div><div class="sd">✓</div><div class="sl"></div>'
         step.querySelector('.sl').textContent = label
+        if (done && times && times[i]){ const tm=document.createElement('div'); tm.className='stime'; tm.textContent=fmtTime(times[i]); step.appendChild(tm) }
         el.appendChild(step)
       })
     }
 
     function fillPopup(o){
       const stage = o.stage || 1
-      buildSteps($('pSteps'), ['Informiert','Unterwegs','Angekommen'], Math.min(stage, 3))
+      buildSteps($('pSteps'), ['Informiert','Unterwegs','Angekommen'], Math.min(stage, 3), [null, o.unterwegs_at, o.angekommen_at])
       $('pGuestSteps').classList.toggle('hidden', stage < 3)
-      buildSteps($('pGSteps'), ['An Bord','Angekommen'], Math.max(stage - 3, 0))
+      buildSteps($('pGSteps'), ['An Bord','Angekommen'], Math.max(stage - 3, 0), [o.an_bord_at, null])
 
       const hasDriver = !!o.driver_first_name
       const phone = hasDriver ? intlPhone(o.driver_phone) : ''

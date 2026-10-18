@@ -139,6 +139,7 @@
     .step.done .sb { background:var(--green); }
     .step .sl { margin-top:8px; font-size:12px; font-weight:600; color:var(--muted); text-align:center; }
     .step.done .sl { color:var(--text); }
+    .step .stime { margin-top:2px; font-size:12px; color:var(--sub); font-variant-numeric:tabular-nums; }
     .steps-title { font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
     .steps-gap { height:18px; }
     .drv { text-align:center; }
@@ -295,7 +296,7 @@
           </div>
         </div>
         <img id="pTermImg" class="pterm hidden" alt="Terminal" />
-        <div id="pTermHint" class="hint-right hidden"><span>➜</span><span id="pTermHintText"></span></div>
+        <div id="pTermHint" class="hint-right hidden"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span id="pTermHintText"></span></div>
       </div>
       <div class="pcard hidden" id="pContact">
         <div class="lbl">Kontakt zum Fahrer</div>
@@ -323,6 +324,7 @@
       'id','status','order_number','passenger_name','booking_type','scheduled_at','scheduled_until',
       'pickup_location','destination','terminal','partner_id','passenger_count','children_details','vehicles',
       'tracking_token','tracking_email_sent_at','hotel_link_sent','partner_link_forwarded',
+      'unterwegs_at','angekommen_at','an_bord_at',
       'partners(name)','drivers!orders_assigned_driver_id_fkey(name,first_name,phone,profile_photo_url)','order_drivers(role)',
     ].join(',')
 
@@ -347,7 +349,7 @@
       const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
       return Math.ceil(((date - yearStart) / 86400000 + 1) / 7)
     }
-    function fmtTime(iso){ return iso ? new Date(iso).toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit'}) : '' }
+    function fmtTime(iso){ return iso ? new Date(iso).toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Vienna'}) : '' }
     function fmtDate(d){ return d.toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'}) }
     function fmtDateTime(iso){ return iso ? fmtDate(new Date(iso)) + ' ' + fmtTime(iso) : '—' }
     function fmtDateLong(d){ return DOW[(d.getDay()+6)%7]+', '+d.getDate()+'. '+MONTHS[d.getMonth()]+' '+d.getFullYear() }
@@ -619,7 +621,7 @@
           left.appendChild(l)
         }
         if (x.firstRide && x.ss.length === 0 && !isFuture){
-          left.appendChild(el('div', 'duty-warn', '⚠ Fahrt um ' + fmtTime(x.firstRide.scheduled_at) + ' zugewiesen – noch kein Dienst gestartet'))
+          left.appendChild(el('div', 'duty-warn', 'Fahrt um ' + fmtTime(x.firstRide.scheduled_at) + ' zugewiesen – noch kein Dienst gestartet'))
         }
         const chip = x.active
           ? el('span', 'chip on', 'Im Dienst seit ' + fmtTime(x.ss.find(s => !s.ended_at).started_at))
@@ -682,20 +684,23 @@
     }
 
     // ---------------- Popup ----------------
-    function buildSteps(box, labels, reached){
+    // times[i]: Zeitpunkt des Schritts – wird als HH:MM unter erledigten Schritten angezeigt.
+    function buildSteps(box, labels, reached, times){
       box.innerHTML = ''
       labels.forEach((label, i) => {
-        const step = el('div', 'step' + (i + 1 <= reached ? ' done' : ''))
+        const done = i + 1 <= reached
+        const step = el('div', 'step' + (done ? ' done' : ''))
         step.append(el('div', 'sb'), el('div', 'sd', '✓'), el('div', 'sl', label))
+        if (done && times && times[i]) step.append(el('div', 'stime', fmtTime(times[i])))
         box.appendChild(step)
       })
     }
 
     function fillPopup(o){
       const stage = o.stage || 1
-      buildSteps($('pSteps'), ['Informiert','Unterwegs','Angekommen'], Math.min(stage, 3))
+      buildSteps($('pSteps'), ['Informiert','Unterwegs','Angekommen'], Math.min(stage, 3), [null, o.unterwegs_at, o.angekommen_at])
       $('pGuestSteps').classList.toggle('hidden', stage < 3)
-      buildSteps($('pGSteps'), ['An Bord','Angekommen'], Math.max(stage - 3, 0))
+      buildSteps($('pGSteps'), ['An Bord','Angekommen'], Math.max(stage - 3, 0), [o.an_bord_at, null])
 
       $('aNr').textContent = o.order_number || '—'
       $('aHotel').textContent = o.hotel_name || '—'
