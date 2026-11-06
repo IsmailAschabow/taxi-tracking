@@ -387,10 +387,14 @@
     }
 
     // Tageszahlen: heutige Fahrten, Gäste gerade unterwegs, Links noch nicht an den Gast weitergeleitet.
+    // "Aktiv" und "Links offen" nur für Fahrten ab 24 h vor jetzt – alte, nie abgeschlossene
+    // Fahrten sollen nicht ewig mitzählen.
     function renderStats(){
       const today = ordersForDay(startOfDay(new Date()))
-      const moving = orders.filter(o => ['unterwegs','angekommen','an_bord'].includes(o.status)).length
-      const open = orders.filter(o => o.status !== 'abgeschlossen' && !o.link_forwarded).length
+      const since = Date.now() - 24 * 3600 * 1000
+      const recent = orders.filter(o => new Date(o.scheduled_at).getTime() >= since)
+      const moving = recent.filter(o => ['unterwegs','angekommen','an_bord'].includes(o.status)).length
+      const open = recent.filter(o => o.status !== 'abgeschlossen' && !o.link_forwarded).length
       const items = [
         ['var(--blue)', today.length, today.length === 1 ? 'Fahrt heute' : 'Fahrten heute'],
         ['var(--green)', moving, moving === 1 ? 'Fahrt gerade aktiv' : 'Fahrten gerade aktiv'],
