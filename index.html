@@ -225,7 +225,7 @@
         <button class="call" id="callBtn" type="button">Call driver<small id="callNum"></small></button>
       </div>
 
-      <div class="foot"><span class="live">● Live</span> · updates every 20 seconds</div>
+      <div class="foot"><span class="live">● Live</span> · <span id="pollText">updates automatically</span></div>
     </div>
   </div>
 
@@ -264,7 +264,7 @@
     // --- Konfiguration (öffentliche Werte – der anon-Key ist NICHT geheim) ---
     const SUPABASE_URL = 'https://apmaqbctnpxzkinmaiap.supabase.co'
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwbWFxYmN0bnB4emtpbm1haWFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NjIxMzUsImV4cCI6MjA5MDQzODEzNX0.kpmLP9h-MCYJi954p1-s7dWvgFrAGGOy6V1KhlZZbTQ'
-    const POLL_MS = 20000
+    const POLL_MS = 10000
     // Zeiten immer in Ortszeit Zürich/Vorarlberg anzeigen, egal wo das Handy des Gastes eingestellt ist.
     const TZ = 'Europe/Zurich'
     // Terminal-Fotos (ZRH) + Treffpunkt + Hinweis für den Gast.
@@ -605,6 +605,8 @@
 
     if (!token) showNotFound()
     else { poll(); timer = setInterval(poll, POLL_MS) }
+    // Hinweistext immer passend zum tatsächlichen Intervall.
+    $('pollText').textContent = 'updates every ' + (POLL_MS / 1000) + ' seconds'
   </script>
 </body>
 </html>
