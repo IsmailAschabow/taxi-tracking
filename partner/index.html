@@ -97,14 +97,16 @@
     .hello-sub { font-size:14px; color:var(--sub); margin-top:3px; }
     .lbl { font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
     .summary { font-size:14px; line-height:1.55; }
-    .route { display:flex; gap:12px; }
-    .rl { display:flex; flex-direction:column; align-items:center; padding-top:4px; }
-    .rl .d1 { width:10px; height:10px; border-radius:50%; background:var(--blue); }
-    .rl .d2 { width:10px; height:10px; border-radius:50%; background:var(--green); }
-    .rl .ln { width:2px; flex:1; min-height:20px; background:var(--border); }
-    .rt { flex:1; display:flex; flex-direction:column; justify-content:space-between; gap:12px; }
-    .rt .k { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
-    .rt .v { font-size:15px; font-weight:600; }
+    .route { display:flex; flex-direction:column; }
+    .stop { display:flex; gap:12px; position:relative; padding-bottom:12px; }
+    .stop:last-child { padding-bottom:0; }
+    .stop:not(:last-child)::before { content:''; position:absolute; left:4px; top:14px; bottom:-4px; width:2px; background:var(--border); }
+    .stop .dot { width:10px; height:10px; border-radius:50%; margin-top:4px; flex-shrink:0; }
+    .stop .d1 { background:var(--blue); }
+    .stop .dv { background:#ea580c; }
+    .stop .d2 { background:var(--green); }
+    .stop .k { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+    .stop .v { font-size:15px; font-weight:600; }
     .pterm { width:100%; border-radius:10px; margin-top:14px; display:block; }
     .hint-right { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:10px;
       background:var(--accent); color:#fff; border-radius:10px; padding:11px 14px; font-size:14px; font-weight:800; letter-spacing:1px; }
@@ -164,11 +166,9 @@
       <div class="pcard">
         <div class="lbl">Fahrt</div>
         <div class="route">
-          <div class="rl"><div class="d1"></div><div class="ln"></div><div class="d2"></div></div>
-          <div class="rt">
-            <div><div class="k">Abholort</div><div class="v" id="pPickup"></div></div>
-            <div><div class="k" id="pDestK">Zielort</div><div class="v" id="pDest"></div></div>
-          </div>
+          <div class="stop"><div class="dot d1"></div><div><div class="k">Abholort</div><div class="v" id="pPickup"></div></div></div>
+          <div class="stop hidden" id="pViaRow"><div class="dot dv"></div><div><div class="k">Zwischenziel</div><div class="v" id="pVia"></div></div></div>
+          <div class="stop"><div class="dot d2"></div><div><div class="k" id="pDestK">Zielort</div><div class="v" id="pDest"></div></div></div>
         </div>
         <img id="pTermImg" class="pterm hidden" alt="Terminal" />
         <div id="pTermHint" class="hint-right hidden"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span id="pTermHintText"></span></div>
@@ -187,8 +187,8 @@
     const DOW = ['Mo','Di','Mi','Do','Fr','Sa','So']
     const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember']
     const TERMINALS = {
-      '1': { img: '../terminal1.jpg', hint: 'TO YOUR RIGHT' },
-      '2': { img: '../terminal2.jpg', hint: 'TO YOUR RIGHT' },
+      '1': { img: '../terminal1.jpg', spot: 'at Coffee Shop Spettacolo', hint: 'TO YOUR RIGHT' },
+      '2': { img: '../terminal2.jpg', spot: 'at Coffee Stoor', hint: 'TO YOUR RIGHT' },
     }
     const SEATS = { babyschale: 'Babyschale', kindersitz: 'Kindersitz', sitzerhoehung: 'Sitzerhöhung' }
     const API_HEADERS = { 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+SUPABASE_ANON_KEY, 'Content-Type':'application/json' }
@@ -213,7 +213,7 @@
     function fmtDateLong(d){ return DOW[(d.getDay()+6)%7]+', '+d.getDate()+'. '+MONTHS[d.getMonth()]+' '+d.getFullYear() }
     function statusLabel(s){ return {angenommen:'Angenommen',unterwegs:'Unterwegs',angekommen:'Angekommen',an_bord:'Gast an Bord',abgeschlossen:'Abgeschlossen'}[s] || s }
     function initials(n){ return (n||'').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase() || '·' }
-    function withTerminal(loc, t){ return (loc || '—') + (t ? ' · Terminal ' + t : '') }
+    function withTerminal(loc, t){ return (loc || '—') + (t ? ' · Terminal ' + t + (TERMINALS[t] ? ', ' + TERMINALS[t].spot : '') : '') }
 
     // Telefonnummer immer mit Ländervorwahl (Standard +43).
     function intlPhone(raw){
@@ -365,7 +365,7 @@
       const stage = o.stage || 1
       buildSteps($('pSteps'), ['Informiert','Unterwegs','Angekommen'], Math.min(stage, 3), [null, o.unterwegs_at, o.angekommen_at])
       $('pGuestSteps').classList.toggle('hidden', stage < 3)
-      buildSteps($('pGSteps'), ['An Bord','Angekommen'], Math.max(stage - 3, 0), [o.an_bord_at, null])
+      buildSteps($('pGSteps'), ['Im Auto','Angekommen'], Math.max(stage - 3, 0), [o.an_bord_at, null])
 
       const hasDriver = !!o.driver_first_name
       const phone = hasDriver ? intlPhone(o.driver_phone) : ''
@@ -386,6 +386,9 @@
         if (phone){ $('pCall').href='tel:'+phone; $('pCall').textContent='Fahrer anrufen · '+phone }
       }
       $('pPickup').textContent = withTerminal(o.pickup_location, o.terminal)
+      const via = o.booking_type!=='stunden' ? (o.intermediate_stop||'').trim() : ''
+      $('pVia').textContent = via
+      $('pViaRow').classList.toggle('hidden', !via)
       if (o.booking_type==='stunden'){
         $('pDestK').textContent='Buchung'
         $('pDest').textContent='Stundenbuchung'+(o.scheduled_until?' ('+fmtTime(o.scheduled_at)+' – '+fmtTime(o.scheduled_until)+')':'')
